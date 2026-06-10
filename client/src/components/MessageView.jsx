@@ -27,6 +27,87 @@ function hasExternalImages(html) {
   return /src=["'](https?:\/\/|\/\/)/.test(html)
 }
 
+function collectContacts(message) {
+  if (!message) return
+  const existing = JSON.parse(localStorage.getItem('magicube:contacts') || '[]')
+  const byAddress = new Map(existing.map(c => [c.address, c]))
+  const addrs = [...(message.from || []), ...(message.to || []), ...(message.cc || [])]
+  for (const a of addrs) {
+    if (a.address && !byAddress.has(a.address)) byAddress.set(a.address, { name: a.name || '', address: a.address })
+  }
+  const updated = [...byAddress.values()].slice(-200)
+  localStorage.setItem('magicube:contacts', JSON.stringify(updated))
+}
+
+function PdfIcon() {
+  return (
+    <svg className="w-8 h-8 text-red-400 shrink-0" viewBox="0 0 32 32" fill="none">
+      <rect x="4" y="2" width="18" height="24" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M16 2v6h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <text x="6" y="20" fontSize="7" fill="currentColor" fontFamily="sans-serif" fontWeight="bold">PDF</text>
+    </svg>
+  )
+}
+
+function AttachmentItem({ a, uid, folder }) {
+  const url = mail.attachment(uid, folder, a.index)
+  const isImage = a.contentType && a.contentType.startsWith('image/')
+  const isPdf = a.contentType === 'application/pdf'
+
+  if (isImage) {
+    return (
+      <div className="flex flex-col items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg p-3 transition-colors cursor-pointer group"
+        style={{ maxWidth: 120 }}>
+        <a href={url} download={a.filename} className="block">
+          <img
+            src={url}
+            alt={a.filename}
+            className="rounded object-cover group-hover:opacity-90 transition-opacity"
+            style={{ maxHeight: 80, maxWidth: 96 }}
+            loading="lazy"
+          />
+        </a>
+        <span className="text-xs text-zinc-400 text-center break-all leading-tight" style={{ maxWidth: 96 }}>{a.filename}</span>
+        <span className="text-xs text-zinc-500">{(a.size / 1024).toFixed(0)}KB</span>
+      </div>
+    )
+  }
+
+  if (isPdf) {
+    return (
+      <div className="flex flex-col items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-lg p-3 transition-colors"
+        style={{ maxWidth: 120 }}>
+        <PdfIcon />
+        <span className="text-xs text-zinc-400 text-center break-all leading-tight" style={{ maxWidth: 96 }}>{a.filename}</span>
+        <span className="text-xs text-zinc-500">{(a.size / 1024).toFixed(0)}KB</span>
+        <div className="flex gap-1.5 mt-0.5">
+          <a href={url} download={a.filename}
+            className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+            Download
+          </a>
+          <span className="text-zinc-600">·</span>
+          <a href={url} target="_blank" rel="noopener noreferrer"
+            className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+            Preview
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <a key={a.index} href={url} download={a.filename}
+      className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-300 transition-colors">
+      <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" viewBox="0 0 14 14" fill="none">
+        <path d="M8 1H3a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V5L8 1z" stroke="currentColor" strokeWidth="1.2"/>
+        <path d="M8 1v4h4" stroke="currentColor" strokeWidth="1.2"/>
+      </svg>
+      <span>{a.filename}</span>
+      <span className="text-zinc-500">{(a.size / 1024).toFixed(0)}KB</span>
+    </a>
+  )
+}
+
 export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, onCompose }) {
   const { message, loading, error } = useMessage(uid, folder)
   const [starred, setStarred] = useState(null)
@@ -46,6 +127,10 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
       mail.flags(uid, folder, ['\\Seen'], []).catch(() => {})
     }
   }, [message, uid, folder])
+
+  useEffect(() => {
+    collectContacts(message)
+  }, [message])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -273,17 +358,9 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
         {message.attachments?.length > 0 && (
           <div className="mt-6 pt-4 border-t border-zinc-800">
             <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3">Attachments</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-end">
               {message.attachments.map(a => (
-                <a key={a.index} href={mail.attachment(uid, folder, a.index)} download={a.filename}
-                  className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-300 transition-colors">
-                  <svg className="w-3.5 h-3.5 text-zinc-500 shrink-0" viewBox="0 0 14 14" fill="none">
-                    <path d="M8 1H3a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V5L8 1z" stroke="currentColor" strokeWidth="1.2"/>
-                    <path d="M8 1v4h4" stroke="currentColor" strokeWidth="1.2"/>
-                  </svg>
-                  <span>{a.filename}</span>
-                  <span className="text-zinc-500">{(a.size / 1024).toFixed(0)}KB</span>
-                </a>
+                <AttachmentItem key={a.index} a={a} uid={uid} folder={folder} />
               ))}
             </div>
           </div>

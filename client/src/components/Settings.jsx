@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-const TABS = ['Compose', 'Reading', 'Shortcuts']
+const TABS = ['Compose', 'Reading', 'Accounts', 'Vacation', 'Rules', 'Shortcuts']
 
 const SHORTCUTS = [
   { key: 'r',      desc: 'Reply' },
@@ -12,6 +12,11 @@ const SHORTCUTS = [
   { key: 'k / ↑',  desc: 'Previous message' },
   { key: 'Esc',    desc: 'Close compose / settings' },
 ]
+
+const RULE_FIELDS    = ['from', 'to', 'subject']
+const RULE_OPERATORS = ['contains', 'equals', 'starts with', 'ends with']
+const RULE_ACTIONS   = ['move', 'flag', 'markRead', 'delete']
+const RULE_FLAGS     = ['Starred', 'Important']
 
 function readPref(key, fallback) {
   try {
@@ -47,7 +52,482 @@ function ToggleSetting({ label, description, value, onChange }) {
   )
 }
 
-export function Settings({ onClose }) {
+function inputCls(extra = '') {
+  return `w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors ${extra}`
+}
+
+function selectCls(extra = '') {
+  return `bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-violet-500 transition-colors ${extra}`
+}
+
+// ─── Accounts Tab ────────────────────────────────────────────────────────────
+
+function AccountsTab({ mail }) {
+  const [accounts, setAccounts]   = useState([])
+  const [newEmail, setNewEmail]   = useState('')
+  const [newPass, setNewPass]     = useState('')
+  const [status, setStatus]       = useState(null)   // { ok, msg }
+
+  function loadAccounts() {
+    if (!mail?.getAccounts) return
+    try {
+      const list = mail.getAccounts()
+      setAccounts(Array.isArray(list) ? list : [])
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e) })
+    }
+  }
+
+  useEffect(() => { loadAccounts() }, [])
+
+  function showStatus(ok, msg) {
+    setStatus({ ok, msg })
+    setTimeout(() => setStatus(null), 3000)
+  }
+
+  async function handleSwitch(index) {
+    try {
+      await mail.switchAccount(index)
+      window.location.reload()
+    } catch (e) {
+      showStatus(false, String(e))
+    }
+  }
+
+  async function handleRemove(index) {
+    try {
+      await mail.removeAccount(index)
+      loadAccounts()
+      showStatus(true, 'Account removed')
+    } catch (e) {
+      showStatus(false, String(e))
+    }
+  }
+
+  async function handleAdd() {
+    if (!newEmail.trim() || !newPass.trim()) {
+      showStatus(false, 'Email and password are required')
+      return
+    }
+    try {
+      await mail.addAccount(newEmail.trim(), newPass)
+      setNewEmail('')
+      setNewPass('')
+      loadAccounts()
+      showStatus(true, 'Account added')
+    } catch (e) {
+      showStatus(false, String(e))
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Account list */}
+      <div>
+        <p className="text-xs font-medium text-zinc-400 mb-2">Configured accounts</p>
+        {accounts.length === 0 && (
+          <p className="text-sm text-zinc-500 italic">No accounts found</p>
+        )}
+        <div className="space-y-1.5">
+          {accounts.map((acc, i) => {
+            const isActive = acc.active ?? i === 0
+            return (
+              <div
+                key={i}
+                className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border ${isActive ? 'border-violet-600/50 bg-violet-600/10' : 'border-zinc-800 bg-zinc-800/40'}`}
+              >
+                <span className={`text-sm truncate ${isActive ? 'text-violet-300 font-medium' : 'text-zinc-300'}`}>
+                  {acc.email ?? acc}
+                  {isActive && <span className="ml-2 text-xs text-violet-400/70">(active)</span>}
+                </span>
+                {!isActive && (
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleSwitch(i)}
+                      className="text-xs px-2.5 py-1 rounded bg-violet-600/20 text-violet-300 hover:bg-violet-600/40 transition-colors"
+                    >
+                      Switch
+                    </button>
+                    <button
+                      onClick={() => handleRemove(i)}
+                      className="text-xs px-2.5 py-1 rounded bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-zinc-800/60" />
+
+      {/* Add account */}
+      <div>
+        <p className="text-xs font-medium text-zinc-400 mb-3">Add account</p>
+        <div className="space-y-2">
+          <input
+            type="email"
+            value={newEmail}
+            onChange={e => setNewEmail(e.target.value)}
+            placeholder="Email address"
+            className={inputCls()}
+          />
+          <input
+            type="password"
+            value={newPass}
+            onChange={e => setNewPass(e.target.value)}
+            placeholder="Password / App password"
+            className={inputCls()}
+          />
+          <button
+            onClick={handleAdd}
+            className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      {status && (
+        <p className={`text-sm ${status.ok ? 'text-green-400' : 'text-red-400'}`}>
+          {status.msg}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── Vacation Tab ─────────────────────────────────────────────────────────────
+
+function VacationTab({ mail }) {
+  const [active, setActive]         = useState(false)
+  const [startDate, setStartDate]   = useState('')
+  const [endDate, setEndDate]       = useState('')
+  const [subject, setSubject]       = useState('Re: {subject}')
+  const [body, setBody]             = useState('')
+  const [status, setStatus]         = useState(null)
+
+  useEffect(() => {
+    if (!mail?.getVacation) return
+    try {
+      const v = mail.getVacation()
+      if (v) {
+        setActive(!!v.active)
+        setStartDate(v.startDate ?? '')
+        setEndDate(v.endDate ?? '')
+        setSubject(v.subject ?? 'Re: {subject}')
+        setBody(v.body ?? '')
+      }
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e) })
+    }
+  }, [])
+
+  async function handleSave() {
+    try {
+      await mail.saveVacation({ active, subject, body, startDate, endDate })
+      setStatus({ ok: true, msg: 'Vacation settings saved' })
+      setTimeout(() => setStatus(null), 3000)
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e) })
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <ToggleSetting
+        label="Vacation responder"
+        description="Automatically reply to incoming messages while you're away"
+        value={active}
+        onChange={setActive}
+      />
+
+      <div className="border-t border-zinc-800/60" />
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start date</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            className={inputCls()}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-400 mb-1.5">End date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            className={inputCls()}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-zinc-400 mb-1.5">Subject template</label>
+        <input
+          type="text"
+          value={subject}
+          onChange={e => setSubject(e.target.value)}
+          placeholder="Re: {subject}"
+          className={inputCls()}
+        />
+        <p className="mt-1.5 text-xs text-zinc-500">Use <code className="bg-zinc-800 px-1 rounded">{'{subject}'}</code> to include the original subject</p>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-zinc-400 mb-1.5">Message body</label>
+        <textarea
+          value={body}
+          onChange={e => setBody(e.target.value)}
+          rows={6}
+          placeholder="I'm currently away and will reply when I return..."
+          className={inputCls('resize-none')}
+        />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors"
+        >
+          Save
+        </button>
+        {status && (
+          <p className={`text-sm ${status.ok ? 'text-green-400' : 'text-red-400'}`}>
+            {status.msg}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Rules Tab ────────────────────────────────────────────────────────────────
+
+function emptyNewRule() {
+  return {
+    name: '',
+    condField: 'from',
+    condOp: 'contains',
+    condValue: '',
+    actionType: 'move',
+    actionFolder: '',
+    actionFlag: 'Starred',
+  }
+}
+
+function conditionSummary(rule) {
+  return `${rule.condField} ${rule.condOp} "${rule.condValue}"`
+}
+
+function actionSummary(rule) {
+  if (rule.actionType === 'move')     return `Move to "${rule.actionFolder}"`
+  if (rule.actionType === 'flag')     return `Flag as ${rule.actionFlag}`
+  if (rule.actionType === 'markRead') return 'Mark as read'
+  if (rule.actionType === 'delete')   return 'Delete'
+  return rule.actionType
+}
+
+function RulesTab({ mail }) {
+  const [rules, setRules]   = useState([])
+  const [form, setForm]     = useState(emptyNewRule)
+  const [status, setStatus] = useState(null)
+
+  useEffect(() => {
+    if (!mail?.getRules) return
+    try {
+      const list = mail.getRules()
+      setRules(Array.isArray(list) ? list : [])
+    } catch (e) {
+      setStatus({ ok: false, msg: String(e) })
+    }
+  }, [])
+
+  function showStatus(ok, msg) {
+    setStatus({ ok, msg })
+    setTimeout(() => setStatus(null), 3000)
+  }
+
+  async function persist(updated) {
+    try {
+      await mail.saveRules(updated)
+      setRules(updated)
+    } catch (e) {
+      showStatus(false, String(e))
+    }
+  }
+
+  async function handleDelete(id) {
+    await persist(rules.filter(r => r.id !== id))
+    showStatus(true, 'Rule deleted')
+  }
+
+  async function handleAdd() {
+    if (!form.name.trim()) {
+      showStatus(false, 'Rule name is required')
+      return
+    }
+    if (!form.condValue.trim()) {
+      showStatus(false, 'Condition value is required')
+      return
+    }
+    if (form.actionType === 'move' && !form.actionFolder.trim()) {
+      showStatus(false, 'Folder is required for move action')
+      return
+    }
+    const newRule = {
+      id: typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : String(Date.now()),
+      name: form.name.trim(),
+      condField: form.condField,
+      condOp: form.condOp,
+      condValue: form.condValue.trim(),
+      actionType: form.actionType,
+      actionFolder: form.actionFolder.trim(),
+      actionFlag: form.actionFlag,
+    }
+    await persist([...rules, newRule])
+    setForm(emptyNewRule())
+    showStatus(true, 'Rule added')
+  }
+
+  function setField(key, value) {
+    setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Rule list */}
+      <div>
+        <p className="text-xs font-medium text-zinc-400 mb-2">Active rules</p>
+        {rules.length === 0 && (
+          <p className="text-sm text-zinc-500 italic">No rules configured</p>
+        )}
+        <div className="space-y-1.5">
+          {rules.map(rule => (
+            <div
+              key={rule.id}
+              className="flex items-start justify-between gap-3 px-3 py-2.5 rounded-lg border border-zinc-800 bg-zinc-800/40"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-zinc-200 truncate">{rule.name}</p>
+                <p className="text-xs text-zinc-500 mt-0.5">If {conditionSummary(rule)}</p>
+                <p className="text-xs text-zinc-500">Then {actionSummary(rule)}</p>
+              </div>
+              <button
+                onClick={() => handleDelete(rule.id)}
+                className="shrink-0 text-xs px-2.5 py-1 rounded bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="border-t border-zinc-800/60" />
+
+      {/* Add rule form */}
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-zinc-400">Add rule</p>
+
+        <input
+          type="text"
+          value={form.name}
+          onChange={e => setField('name', e.target.value)}
+          placeholder="Rule name"
+          className={inputCls()}
+        />
+
+        {/* Condition row */}
+        <div className="flex gap-2">
+          <select
+            value={form.condField}
+            onChange={e => setField('condField', e.target.value)}
+            className={selectCls()}
+          >
+            {RULE_FIELDS.map(f => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+          <select
+            value={form.condOp}
+            onChange={e => setField('condOp', e.target.value)}
+            className={selectCls()}
+          >
+            {RULE_OPERATORS.map(op => (
+              <option key={op} value={op}>{op}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            value={form.condValue}
+            onChange={e => setField('condValue', e.target.value)}
+            placeholder="Value"
+            className={inputCls('flex-1')}
+          />
+        </div>
+
+        {/* Action row */}
+        <div className="flex gap-2">
+          <select
+            value={form.actionType}
+            onChange={e => setField('actionType', e.target.value)}
+            className={selectCls()}
+          >
+            {RULE_ACTIONS.map(a => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+          {form.actionType === 'move' && (
+            <input
+              type="text"
+              value={form.actionFolder}
+              onChange={e => setField('actionFolder', e.target.value)}
+              placeholder="Folder name"
+              className={inputCls('flex-1')}
+            />
+          )}
+          {form.actionType === 'flag' && (
+            <select
+              value={form.actionFlag}
+              onChange={e => setField('actionFlag', e.target.value)}
+              className={selectCls('flex-1')}
+            >
+              {RULE_FLAGS.map(f => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <button
+          onClick={handleAdd}
+          className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          Add rule
+        </button>
+      </div>
+
+      {status && (
+        <p className={`text-sm ${status.ok ? 'text-green-400' : 'text-red-400'}`}>
+          {status.msg}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── Root component ───────────────────────────────────────────────────────────
+
+export function Settings({ onClose, mail }) {
   const [tab, setTab] = useState('Compose')
   const [displayName, setDisplayName]   = useState(() => readPref('magicube:displayName', ''))
   const [signature, setSignature]       = useState(() => readPref('magicube:signature', ''))
@@ -65,6 +545,8 @@ export function Settings({ onClose }) {
     setSaved(true)
     setTimeout(() => { setSaved(false); onClose() }, 700)
   }
+
+  const showFooter = tab === 'Compose' || tab === 'Reading'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -154,6 +636,12 @@ export function Settings({ onClose }) {
               </div>
             )}
 
+            {tab === 'Accounts' && <AccountsTab mail={mail} />}
+
+            {tab === 'Vacation' && <VacationTab mail={mail} />}
+
+            {tab === 'Rules' && <RulesTab mail={mail} />}
+
             {tab === 'Shortcuts' && (
               <div>
                 <p className="text-xs text-zinc-500 mb-4">Active when focus is outside a text field</p>
@@ -172,8 +660,8 @@ export function Settings({ onClose }) {
           </div>
         </div>
 
-        {/* Footer — hidden on Shortcuts tab */}
-        {tab !== 'Shortcuts' && (
+        {/* Footer — only for tabs with localStorage-backed save */}
+        {showFooter && (
           <div className="flex items-center gap-3 px-5 py-3.5 border-t border-zinc-800 shrink-0">
             <button onClick={handleSave}
               className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors min-w-[5rem]">

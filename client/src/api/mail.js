@@ -73,4 +73,28 @@ export const mail = {
 
   emptyFolder: (folder) =>
     req(`/api/folders/empty?folder=${encodeURIComponent(folder)}`, { method: 'DELETE' }),
+
+  // Folder management
+  createFolder: (name, parent) => req('/api/folders', { method: 'POST', body: JSON.stringify({ name, parent }) }),
+  renameFolder: (path, newName) => req('/api/folders/rename', { method: 'PATCH', body: JSON.stringify({ path, newName }) }),
+  deleteFolder: (folderPath) => req(`/api/folders/${encodeURIComponent(folderPath)}`, { method: 'DELETE' }),
+
+  // Rules
+  getRules: () => req('/api/rules'),
+  saveRules: (rules) => req('/api/rules', { method: 'PUT', body: JSON.stringify(rules) }),
+
+  // Vacation
+  getVacation: () => req('/api/vacation'),
+  saveVacation: (settings) => req('/api/vacation', { method: 'PUT', body: JSON.stringify(settings) }),
+
+  // Scheduled send queue
+  scheduleSend: (data) => req('/api/queue', { method: 'POST', body: JSON.stringify(data) }),
+  cancelScheduled: (id) => req(`/api/queue/${id}`, { method: 'DELETE' }),
+  getQueue: () => req('/api/queue'),
+
+  // Accounts
+  getAccounts: () => req('/api/accounts'),
+  addAccount: (user, pass) => req('/api/accounts', { method: 'POST', body: JSON.stringify({ user, pass }) }),
+  switchAccount: (index) => req(`/api/accounts/${index}/switch`, { method: 'POST' }),
+  removeAccount: (index) => req(`/api/accounts/${index}`, { method: 'DELETE' }),
 }
