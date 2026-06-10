@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { Login } from './components/Login'
 import { Sidebar } from './components/Sidebar'
+import FadeContent from './components/bits/FadeContent'
 import { MessageList } from './components/MessageList'
 import { MessageView } from './components/MessageView'
 import { Compose } from './components/Compose'
@@ -80,9 +81,9 @@ export default function App() {
           </button>
           <span className="text-sm font-semibold text-zinc-200 truncate">{folderLabel}</span>
         </div>
-        <div className="flex-1 min-h-0 flex flex-col">
+        <FadeContent key={folder} className="flex-1 min-h-0 flex flex-col" duration={180}>
           <MessageList key={listKey} folder={folder} activeUid={activeUid} onSelect={handleMessageSelect} />
-        </div>
+        </FadeContent>
       </div>
 
       {/* Message view panel */}
@@ -96,7 +97,7 @@ export default function App() {
           </button>
           <span className="text-sm font-semibold text-zinc-200 truncate">{folderLabel}</span>
         </div>
-        <div className="flex-1 min-h-0 flex flex-col">
+        <FadeContent key={activeUid || 'empty'} className="flex-1 min-h-0 flex flex-col" duration={180}>
           <MessageView
             uid={activeUid}
             folder={folder}
@@ -105,7 +106,7 @@ export default function App() {
             onRefreshList={handleRefreshList}
             onCompose={setCompose}
           />
-        </div>
+        </FadeContent>
       </div>
 
       {compose !== null && (

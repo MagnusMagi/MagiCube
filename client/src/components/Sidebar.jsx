@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useFolders } from '../hooks/useMail'
 import { mail } from '../api/mail'
+import ShinyText from './bits/ShinyText'
+import ClickSpark from './bits/ClickSpark'
+import CountUp from './bits/CountUp'
 
 const FOLDER_ICONS = {
   INBOX: <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none"><path d="M2 5l6 4 6-4M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -120,7 +123,7 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete }) {
         <span className="truncate flex-1">{label}</span>
         {folder.unseen > 0 && (
           <span className="bg-violet-600 text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
-            {folder.unseen > 99 ? '99+' : folder.unseen}
+            {folder.unseen > 99 ? '99+' : <CountUp key={folder.unseen} from={0} to={folder.unseen} duration={0.6} />}
           </span>
         )}
       </button>
@@ -282,14 +285,16 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
   return (
     <aside className="w-full md:w-56 shrink-0 h-full bg-zinc-950 border-r border-zinc-800/60 flex flex-col">
       <div className="p-4 border-b border-zinc-800/60">
-        <div className="text-base font-semibold text-white mb-3">MagiCube</div>
-        <button
-          onClick={onCompose}
-          className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg py-2 transition-colors"
-        >
-          <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
-          Compose
-        </button>
+        <ShinyText text="MagiCube" speed={4} color="#71717a" shineColor="#e4e4e7" className="text-base font-semibold mb-3 block" />
+        <ClickSpark sparkColor="#a78bfa" sparkCount={8} sparkSize={8} sparkRadius={24} duration={500}>
+          <button
+            onClick={onCompose}
+            className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg py-2 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+            Compose
+          </button>
+        </ClickSpark>
       </div>
 
       <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
