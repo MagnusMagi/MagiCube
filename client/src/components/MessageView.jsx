@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useMessage } from '../hooks/useMail'
 import { mail } from '../api/mail'
+import Orb from './bits/Orb'
+import DecryptedText from './bits/DecryptedText'
 
 function AddressChip({ addr }) {
   const label = addr.name ? `${addr.name} <${addr.address}>` : addr.address
@@ -239,12 +241,9 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
 
   if (!uid) {
     return (
-      <div className="flex-1 flex items-center justify-center text-zinc-600">
+      <div className="flex-1 flex flex-col items-center justify-center text-zinc-600 gap-5">
+        <Orb size={160} />
         <div className="text-center">
-          <svg className="w-12 h-12 mx-auto mb-3 opacity-30" viewBox="0 0 48 48" fill="none">
-            <rect x="6" y="10" width="36" height="28" rx="3" stroke="currentColor" strokeWidth="1.5"/>
-            <path d="M6 16l18 12 18-12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
           <p className="text-sm">Select a message to read</p>
           <p className="text-xs mt-1 text-zinc-700">r=reply · f=forward · d=delete · j/k=navigate</p>
         </div>
@@ -252,7 +251,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
     )
   }
 
-  if (loading) return <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">Loading…</div>
+  if (loading) return <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm"><DecryptedText text="Loading…" speed={40} /></div>
   if (error) return <div className="flex-1 flex items-center justify-center text-red-400 text-sm">{error}</div>
   if (!message) return null
 

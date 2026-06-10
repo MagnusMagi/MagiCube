@@ -3,6 +3,8 @@ import { useMessages } from '../hooks/useMail'
 import { mail } from '../api/mail'
 import BlurText from './bits/BlurText'
 import SpotlightCard from './bits/SpotlightCard'
+import AnimatedList from './bits/AnimatedList'
+import DecryptedText from './bits/DecryptedText'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -224,7 +226,7 @@ export function MessageList({ folder, activeUid, onSelect }) {
         </div>
       )}
       <div className="flex-1 overflow-y-auto">
-        {loading && <div className="flex items-center justify-center h-20 text-zinc-500 text-sm">Loading…</div>}
+        {loading && <div className="flex items-center justify-center h-20 text-zinc-500 text-sm"><DecryptedText text="Loading…" speed={40} /></div>}
         {error && <div className="px-4 py-3 text-red-400 text-xs">{error}</div>}
         {!loading && messages.length === 0 && <div className="flex items-center justify-center h-20 text-zinc-500 text-sm">No messages</div>}
         {threadMode
@@ -240,9 +242,11 @@ export function MessageList({ folder, activeUid, onSelect }) {
                 onToggleExpand={toggleThreadExpand}
               />
             ))
-          : messages.map(msg => (
-              <MessageRow key={msg.uid} msg={msg} active={activeUid === msg.uid} selected={selectedUids.has(msg.uid)} onSelect={onSelect} onToggleSelect={toggleOne} />
-            ))
+          : <AnimatedList key={`${folder}-${page}`}>
+              {messages.map(msg => (
+                <MessageRow key={msg.uid} msg={msg} active={activeUid === msg.uid} selected={selectedUids.has(msg.uid)} onSelect={onSelect} onToggleSelect={toggleOne} />
+              ))}
+            </AnimatedList>
         }
       </div>
       {totalPages > 1 && (
