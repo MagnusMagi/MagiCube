@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useMessages } from '../hooks/useMail'
 import { mail } from '../api/mail'
+import BlurText from './bits/BlurText'
+import SpotlightCard from './bits/SpotlightCard'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -36,7 +38,7 @@ function groupIntoThreads(messages) {
 
 function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented }) {
   return (
-    <div className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-violet-600/10' : selected ? 'bg-zinc-800/60' : 'hover:bg-zinc-800/40'} ${active ? 'border-l-2 border-l-violet-500' : ''} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
+    <SpotlightCard spotlightColor={active ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.07)'} className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-violet-600/10' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-violet-500' : ''} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
       <div className={`flex items-center shrink-0 ${indented ? 'pl-6 pr-1' : 'pl-3 pr-1'}`}>
         <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
           className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
@@ -49,7 +51,7 @@ function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented 
         </div>
         <div className={`text-xs truncate ${msg.read ? 'text-zinc-500' : 'text-zinc-300'}`}>{msg.subject}</div>
       </button>
-    </div>
+    </SpotlightCard>
   )
 }
 
@@ -194,7 +196,7 @@ export function MessageList({ folder, activeUid, onSelect }) {
   return (
     <div className="w-full md:w-80 shrink-0 h-full flex flex-col border-r border-zinc-800/60 bg-zinc-900/40">
       <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
-        <h2 className="text-sm font-semibold text-zinc-200 flex-1 truncate">{folder ? folder.split(/[./]/).pop() : 'Inbox'}</h2>
+        <BlurText key={folder} text={folder ? folder.split(/[./]/).pop() : 'Inbox'} delay={50} stepDuration={0.2} className="text-sm font-semibold text-zinc-200 flex-1" />
         <button
           onClick={() => setThreadMode(m => !m)}
           className={`text-xs px-2 py-1 rounded transition-colors ${threadMode ? 'bg-violet-600/30 text-violet-300' : 'text-zinc-500 hover:text-zinc-300'}`}
