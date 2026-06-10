@@ -37,8 +37,9 @@ export function MessageList({ folder, activeUid, onSelect }) {
   const [bulkStatus, setBulkStatus] = useState('')
   const timerRef = useRef(null)
 
-  const { messages, total, loading, error, refresh } = useMessages(folder, page, search)
-  const totalPages = Math.ceil(total / 50) || 1
+  const perPage = parseInt(localStorage.getItem('magicube:perPage') || '50', 10)
+  const { messages, total, loading, error, refresh } = useMessages(folder, page, search, perPage)
+  const totalPages = Math.ceil(total / perPage) || 1
 
   useEffect(() => { setPage(1); setSelectedUids(new Set()) }, [folder])
   useEffect(() => { setSelectedUids(new Set()) }, [page, search])

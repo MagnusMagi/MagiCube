@@ -20,7 +20,7 @@ export function useFolders() {
   return { folders, error, refresh }
 }
 
-export function useMessages(folder, page, search) {
+export function useMessages(folder, page, search, limit = 50) {
   const [data, setData] = useState({ messages: [], total: 0 })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -30,11 +30,11 @@ export function useMessages(folder, page, search) {
     if (!folder) return
     setLoading(true)
     setError(null)
-    mail.messages(folder, page, 50, search, signal)
+    mail.messages(folder, page, limit, search, signal)
       .then(d => { if (!signal?.aborted) setData(d) })
       .catch(e => { if (e.name !== 'AbortError') setError(e.message) })
       .finally(() => { if (!signal?.aborted) setLoading(false) })
-  }, [folder, page, search])
+  }, [folder, page, search, limit])
 
   useEffect(() => {
     controllerRef.current?.abort()

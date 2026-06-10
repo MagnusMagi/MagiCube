@@ -32,7 +32,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
   const [starred, setStarred] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleteError, setDeleteError] = useState('')
-  const [showImages, setShowImages] = useState(false)
+  const [showImages, setShowImages] = useState(() => localStorage.getItem('magicube:blockImages') === 'false')
   const [showSource, setShowSource] = useState(false)
   const [rawSource, setRawSource] = useState(null)
   const [showMoveMenu, setShowMoveMenu] = useState(false)
@@ -41,7 +41,8 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
   useEffect(() => { setShowImages(false); setShowSource(false); setRawSource(null); setConfirmDelete(false) }, [uid])
 
   useEffect(() => {
-    if (message && !message.read) {
+    const autoMarkRead = localStorage.getItem('magicube:autoMarkRead') !== 'false'
+    if (message && !message.read && autoMarkRead) {
       mail.flags(uid, folder, ['\\Seen'], []).catch(() => {})
     }
   }, [message, uid, folder])
