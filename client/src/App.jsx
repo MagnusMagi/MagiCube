@@ -224,7 +224,7 @@ export default function App() {
               <span className="text-sm font-semibold text-zinc-200 truncate">{folderLabel}</span>
             </div>
             <FadeContent key={folder} className="flex-1 min-h-0 flex flex-col" duration={180}>
-              <MessageList key={listKey} folder={folder} activeUid={activeUid} onSelect={handleMessageSelect} />
+              <MessageList key={listKey} folder={folder} activeUid={activeUid} onSelect={handleMessageSelect} folders={folders} />
             </FadeContent>
           </div>
 

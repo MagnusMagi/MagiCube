@@ -5,6 +5,8 @@ import BlurText from './bits/BlurText'
 import SpotlightCard from './bits/SpotlightCard'
 import AnimatedList from './bits/AnimatedList'
 import DecryptedText from './bits/DecryptedText'
+import { ContextMenu } from './bits/ContextMenu'
+import { useContextMenu } from '../hooks/useContextMenu'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -38,9 +40,13 @@ function groupIntoThreads(messages) {
   return Array.from(map.values()).sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate))
 }
 
-function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented }) {
+function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented, onContextMenu }) {
   return (
-    <SpotlightCard spotlightColor={active ? 'rgba(161,161,170,0.10)' : 'rgba(161,161,170,0.05)'} className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-400' : !msg.read && !indented ? 'border-l-2 border-l-violet-500' : 'border-l-2 border-l-transparent'} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
+    <SpotlightCard
+      spotlightColor={active ? 'rgba(161,161,170,0.10)' : 'rgba(161,161,170,0.05)'}
+      className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-400' : !msg.read && !indented ? 'border-l-2 border-l-violet-500' : 'border-l-2 border-l-transparent'} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}
+      onContextMenu={e => onContextMenu?.(e, msg)}
+    >
       <div className={`flex items-center shrink-0 ${indented ? 'pl-6 pr-1' : 'pl-3 pr-1'}`}>
         <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
           className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
@@ -57,7 +63,7 @@ function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented 
   )
 }
 
-function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, expanded, onToggleExpand }) {
+function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, expanded, onToggleExpand, onContextMenu }) {
   const latestMsg = thread.messages.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b)
   const isAnyActive = thread.uids.some(uid => uid === activeUid)
 
@@ -106,6 +112,7 @@ function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, 
                 selected={selectedUids.has(msg.uid)}
                 onSelect={onSelect}
                 onToggleSelect={uid => onToggleSelect(uid)}
+                onContextMenu={onContextMenu}
                 indented
               />
             ))}
@@ -115,7 +122,7 @@ function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, 
   )
 }
 
-export function MessageList({ folder, activeUid, onSelect }) {
+export function MessageList({ folder, activeUid, onSelect, folders = [] }) {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
@@ -124,6 +131,7 @@ export function MessageList({ folder, activeUid, onSelect }) {
   const [threadMode, setThreadMode] = useState(false)
   const [expandedThreads, setExpandedThreads] = useState(new Set())
   const timerRef = useRef(null)
+  const { menu, openMenu, closeMenu } = useContextMenu()
 
   const perPage = parseInt(localStorage.getItem('magicube:perPage') || '50', 10)
   const { messages, total, loading, error, refresh } = useMessages(folder, page, search, perPage)
@@ -192,6 +200,37 @@ export function MessageList({ folder, activeUid, onSelect }) {
     catch (e) { setBulkStatus(e.message) }
   }
 
+  function handleRowContextMenu(e, msg) {
+    const moveTargets = folders.filter(f => f.path !== folder)
+    openMenu(e, [
+      {
+        label: msg.read ? 'Mark as Unread' : 'Mark as Read',
+        icon: <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M1 3h12v8a1 1 0 01-1 1H2a1 1 0 01-1-1V3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M1 4l6 4 6-4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+        onClick: () => mail.flags(msg.uid, folder,
+          msg.read ? [] : ['\\Seen'],
+          msg.read ? ['\\Seen'] : []
+        ).then(refresh).catch(() => {}),
+      },
+      { separator: true },
+      {
+        label: 'Move to Folder',
+        icon: <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M1 3h4l2 2h6v6a1 1 0 01-1 1H2a1 1 0 01-1-1V3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+        disabled: moveTargets.length === 0,
+        submenu: moveTargets.map(f => ({
+          label: f.path.split(/[./]/).pop(),
+          onClick: () => mail.move(msg.uid, folder, f.path).then(refresh).catch(() => {}),
+        })),
+      },
+      { separator: true },
+      {
+        label: 'Delete',
+        danger: true,
+        icon: <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M12 3H2M5 3V2h4v1M4 3v8a1 1 0 001 1h4a1 1 0 001-1V3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+        onClick: () => mail.delete(msg.uid, folder).then(refresh).catch(() => {}),
+      },
+    ])
+  }
+
   const anySelected = selectedUids.size > 0
   const allSelected = selectedUids.size === messages.length && messages.length > 0
 
@@ -250,11 +289,12 @@ export function MessageList({ folder, activeUid, onSelect }) {
                 onToggleSelect={toggleOne}
                 expanded={expandedThreads.has(thread.subject)}
                 onToggleExpand={toggleThreadExpand}
+                onContextMenu={handleRowContextMenu}
               />
             ))
           : <AnimatedList key={`${folder}-${page}`}>
               {messages.map(msg => (
-                <MessageRow key={msg.uid} msg={msg} active={activeUid === msg.uid} selected={selectedUids.has(msg.uid)} onSelect={onSelect} onToggleSelect={toggleOne} />
+                <MessageRow key={msg.uid} msg={msg} active={activeUid === msg.uid} selected={selectedUids.has(msg.uid)} onSelect={onSelect} onToggleSelect={toggleOne} onContextMenu={handleRowContextMenu} />
               ))}
             </AnimatedList>
         }
@@ -266,6 +306,7 @@ export function MessageList({ folder, activeUid, onSelect }) {
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="disabled:opacity-30 hover:text-zinc-300 transition-colors px-3 py-2.5 min-h-[44px] flex items-center">Next →</button>
         </div>
       )}
+      <ContextMenu {...menu} onClose={closeMenu} />
     </div>
   )
 }

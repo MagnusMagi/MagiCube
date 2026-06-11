@@ -4,6 +4,8 @@ import { mail } from '../api/mail'
 import ShinyText from './bits/ShinyText'
 import ClickSpark from './bits/ClickSpark'
 import CountUp from './bits/CountUp'
+import { ContextMenu } from './bits/ContextMenu'
+import { useContextMenu } from '../hooks/useContextMenu'
 
 const FOLDER_ICONS = {
   Inbox: <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none"><path d="M2 5l6 4 6-4M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -35,6 +37,33 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDr
   const [renameValue, setRenameValue] = useState(label)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const renameInputRef = useRef(null)
+  const { menu, openMenu, closeMenu } = useContextMenu()
+
+  function handleContextMenu(e) {
+    const items = []
+    if (canEmpty) items.push({
+      label: `Empty ${label}`,
+      icon: <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M11 3H3M5 3V2h4v1M4 3v8a1 1 0 001 1h4a1 1 0 001-1V3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+      onClick: () => onEmpty(folder.path),
+    })
+    if (!isSystem) {
+      if (items.length) items.push({ separator: true })
+      items.push(
+        {
+          label: 'Rename',
+          icon: <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M9.5 1.5l3 3L5 12H2v-3l7.5-7.5z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+          onClick: handleRenameStart,
+        },
+        {
+          label: 'Delete',
+          danger: true,
+          icon: <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M11 3H3M5 3V2h4v1M4 3v8a1 1 0 001 1h4a1 1 0 001-1V3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+          onClick: () => setConfirmDelete(true),
+        }
+      )
+    }
+    if (items.length) openMenu(e, items)
+  }
 
   function handleRenameStart() {
     setRenameValue(label)
@@ -122,6 +151,7 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDr
       onDragOver={onDragOver}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
+      onContextMenu={handleContextMenu}
     >
       <div className="hidden lg:flex opacity-0 group-hover:opacity-100 cursor-grab pl-1 shrink-0 text-zinc-700 hover:text-zinc-500 transition-colors">
         <svg className="w-2.5 h-3.5" viewBox="0 0 6 10" fill="currentColor">
@@ -171,6 +201,7 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDr
           </>
         )}
       </div>
+      <ContextMenu {...menu} onClose={closeMenu} />
     </div>
   )
 }
