@@ -567,7 +567,7 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFileChange} />
 
           {status && !undoState && (
-            <span className={`text-xs ${isSuccess ? 'text-emerald-400' : 'text-red-400'}`}>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${isSuccess ? 'text-emerald-300 bg-emerald-500/10' : 'text-red-300 bg-red-500/10 border border-red-500/20'}`}>
               {status}
             </span>
           )}
