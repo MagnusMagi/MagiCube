@@ -198,8 +198,30 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
   const [scheduledAt, setScheduledAt] = useState('')
   const [scheduling, setScheduling] = useState(false)
 
+  const [size, setSize] = useState({ width: 672, height: 520 })
+
   const fileRef = useRef(null)
   const editorRef = useRef(null)
+
+  function handleResizeStart(e) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startY = e.clientY
+    const startW = size.width
+    const startH = size.height
+    function onMove(ev) {
+      setSize({
+        width: Math.max(480, Math.min(window.innerWidth - 64, startW + ev.clientX - startX)),
+        height: Math.max(380, Math.min(window.innerHeight - 64, startH + ev.clientY - startY)),
+      })
+    }
+    function onUp() {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
 
   // Initialize editor content once
   const initialHtml = buildSignatureHtml(defaultBody)
@@ -339,8 +361,8 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div
-        className="w-full max-w-2xl bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col"
-        style={{ maxHeight: '88vh' }}
+        className="relative bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+        style={{ width: size.width, height: size.height, maxWidth: 'calc(100vw - 2rem)', maxHeight: 'calc(100vh - 2rem)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800">
@@ -549,6 +571,15 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
               {status}
             </span>
           )}
+        </div>
+
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-1 text-zinc-700 hover:text-zinc-500 transition-colors"
+        >
+          <svg viewBox="0 0 8 8" className="w-2.5 h-2.5" fill="none">
+            <path d="M7 1L1 7M7 4L4 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
         </div>
       </div>
     </div>
