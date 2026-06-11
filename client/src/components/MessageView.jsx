@@ -110,7 +110,7 @@ function AttachmentItem({ a, uid, folder }) {
   )
 }
 
-export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, onCompose }) {
+export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, onCompose, theme }) {
   const { message, loading, error } = useMessage(uid, folder)
   const [starred, setStarred] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -258,7 +258,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
   if (!uid) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-zinc-600 gap-5">
-        <Orb size={160} />
+        <Orb size={160} color={theme === 'light' ? '14,116,144' : '139,92,246'} />
         <div className="text-center">
           <p className="text-sm">Select a message to read</p>
           <p className="text-xs mt-1 text-zinc-700">r=reply · f=forward · d=delete · j/k=navigate</p>

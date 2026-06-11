@@ -113,6 +113,7 @@ export default function App() {
             onDeleted={handleMessageDeleted}
             onRefreshList={handleRefreshList}
             onCompose={setCompose}
+            theme={theme}
           />
         </FadeContent>
       </div>
