@@ -1,22 +1,10 @@
-import { useState, useEffect } from 'react'
+import './FadeContent.css'
 
-export default function FadeContent({ children, className = '', style, duration = 200, blur = false }) {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setVisible(true))
-    return () => cancelAnimationFrame(id)
-  }, [])
-
+export default function FadeContent({ children, className = '', duration = 200 }) {
   return (
     <div
-      className={className}
-      style={{
-        ...style,
-        opacity: visible ? 1 : 0,
-        transition: `opacity ${duration}ms ease`,
-        ...(blur ? { filter: visible ? 'blur(0)' : 'blur(8px)' } : {}),
-      }}
+      className={`fade-content ${className}`}
+      style={{ '--fade-duration': `${duration}ms` }}
     >
       {children}
     </div>
