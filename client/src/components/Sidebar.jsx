@@ -132,9 +132,9 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDr
       </div>
       <button
         onClick={() => onClick(folder.path)}
-        className={`flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors text-left ${active ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
+        className={`flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors text-left ${active ? 'bg-linear-to-r from-zinc-800 to-zinc-700/50 text-zinc-100' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
       >
-        <span className={active ? 'text-violet-400' : 'text-zinc-500'}>{icon}</span>
+        <span className={active ? 'text-zinc-300' : 'text-zinc-500'}>{icon}</span>
         <span className="truncate flex-1">{label}</span>
         {folder.unseen > 0 && (
           <span className="bg-violet-600 text-white text-xs font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">

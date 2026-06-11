@@ -203,13 +203,13 @@ export function MessageList({ folder, activeUid, onSelect }) {
         <div className="flex rounded-md overflow-hidden border border-zinc-700/60 shrink-0">
           <button
             onClick={() => setThreadMode(false)}
-            className={`text-xs px-2.5 py-1 transition-colors ${!threadMode ? 'bg-violet-600/30 text-violet-300' : 'text-zinc-600 hover:text-zinc-400'}`}
+            className={`text-xs px-2.5 py-1 transition-colors ${!threadMode ? 'bg-linear-to-b from-zinc-700 to-zinc-800 text-zinc-100' : 'text-zinc-600 hover:text-zinc-400'}`}
           >
             All
           </button>
           <button
             onClick={() => setThreadMode(true)}
-            className={`text-xs px-2.5 py-1 border-l border-zinc-700/60 transition-colors ${threadMode ? 'bg-violet-600/30 text-violet-300' : 'text-zinc-600 hover:text-zinc-400'}`}
+            className={`text-xs px-2.5 py-1 border-l border-zinc-700/60 transition-colors ${threadMode ? 'bg-linear-to-b from-zinc-700 to-zinc-800 text-zinc-100' : 'text-zinc-600 hover:text-zinc-400'}`}
           >
             Threads
           </button>
