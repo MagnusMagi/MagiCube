@@ -12,16 +12,16 @@
 }
 
 html.light {
-  color-scheme: light;
-  --color-zinc-950: oklch(98% .002 286);
-  --color-zinc-900: oklch(94% .003 286);
-  --color-zinc-800: oklch(88% .005 286);
-  --color-zinc-700: oklch(72% .010 286);
-  --color-zinc-600: oklch(50% .014 286);
-  --color-zinc-500: oklch(42% .014 286);
-  --color-zinc-400: oklch(35% .012 286);
-  --color-zinc-300: oklch(26% .008 286);
-  --color-zinc-200: oklch(18% .006 286);
-  --color-zinc-100: oklch(13% .004 286);
-  --color-zinc-50:  oklch(9%  .003 286);
+  color-scheme: dark;
+  --color-zinc-950: oklch(26% .004 240);
+  --color-zinc-900: oklch(30% .005 240);
+  --color-zinc-800: oklch(37% .007 240);
+  --color-zinc-700: oklch(46% .010 240);
+  --color-zinc-600: oklch(58% .012 240);
+  --color-zinc-500: oklch(66% .011 240);
+  --color-zinc-400: oklch(76% .008 240);
+  --color-zinc-300: oklch(85% .005 240);
+  --color-zinc-200: oklch(91% .003 240);
+  --color-zinc-100: oklch(95% .002 240);
+  --color-zinc-50:  oklch(98% .001 240);
 }
