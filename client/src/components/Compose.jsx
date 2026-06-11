@@ -652,7 +652,7 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           <div className="w-px h-4 bg-zinc-800 mx-0.5 shrink-0" />
 
           {/* Priority cycle button */}
-          <button onClick={cyclePriority} title={pMeta.label}
+          <button onClick={cyclePriority} title={pMeta.label} aria-label={pMeta.label}
             className={`px-2 py-1.5 rounded text-sm font-bold transition-colors shrink-0 ${pMeta.cls}`}>
             {pMeta.symbol}
           </button>
@@ -660,6 +660,8 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           {/* Read receipt toggle */}
           <button onClick={() => setReadReceipt(v => !v)}
             title={readReceipt ? 'Read receipt requested' : 'Request read receipt'}
+            aria-label={readReceipt ? 'Read receipt requested' : 'Request read receipt'}
+            aria-pressed={readReceipt}
             className={`p-1.5 rounded transition-colors shrink-0 ${readReceipt ? 'text-violet-400' : 'text-zinc-600 hover:text-zinc-400'}`}>
             <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
               <path d="M1 9l4 4L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

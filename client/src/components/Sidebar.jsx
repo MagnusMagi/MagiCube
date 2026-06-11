@@ -228,7 +228,15 @@ function NewFolderInput({ onConfirm, onCancel }) {
 export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompose, onSettings, onSearch, onNewMail, theme, onToggleTheme }) {
   const { folders, refresh } = useFolders()
   const [creatingFolder, setCreatingFolder] = useState(false)
+  const [folderError, setFolderError] = useState('')
+  const folderErrorTimerRef = useRef(null)
   const sseRetryRef = useRef(null)
+
+  function showFolderError(msg) {
+    setFolderError(msg)
+    clearTimeout(folderErrorTimerRef.current)
+    folderErrorTimerRef.current = setTimeout(() => setFolderError(''), 3000)
+  }
 
   const [folderOrder, setFolderOrder] = useState(() => {
     try { return JSON.parse(localStorage.getItem('magicube:folderOrder') || 'null') } catch { return null }
@@ -301,7 +309,8 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
   }, [connectSSE])
 
   async function handleEmpty(path) {
-    try { await mail.emptyFolder(path) } catch (_) {}
+    try { await mail.emptyFolder(path); refresh() }
+    catch (e) { showFolderError(e.message || 'Failed to empty folder') }
   }
 
   async function handleCreateFolder(name) {
@@ -309,21 +318,21 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
     try {
       await mail.createFolder(name)
       refresh()
-    } catch (_) {}
+    } catch (e) { showFolderError(e.message || 'Failed to create folder') }
   }
 
   async function handleRenameFolder(path, newName) {
     try {
       await mail.renameFolder(path, newName)
       refresh()
-    } catch (_) {}
+    } catch (e) { showFolderError(e.message || 'Failed to rename folder') }
   }
 
   async function handleDeleteFolder(path) {
     try {
       await mail.deleteFolder(path)
       refresh()
-    } catch (_) {}
+    } catch (e) { showFolderError(e.message || 'Failed to delete folder') }
   }
 
   return (
@@ -363,6 +372,11 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
         </button>
       </div>
 
+      {folderError && (
+        <div role="alert" className="mx-2 mb-1 px-2 py-1.5 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">
+          {folderError}
+        </div>
+      )}
       <nav className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
         {creatingFolder && (
           <NewFolderInput

@@ -376,7 +376,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
               sandbox="allow-same-origin"
               referrerPolicy="no-referrer"
               className="w-full border-0 rounded-lg ring-1 ring-zinc-700/50"
-              style={{ minHeight: 400 }}
+              style={{ minHeight: 400, colorScheme: 'light' }}
               title="Email content"
               onLoad={e => {
                 const frame = e.target
@@ -421,7 +421,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
 
 function ActionBtn({ onClick, title, danger, children }) {
   return (
-    <button onClick={onClick} title={title}
+    <button onClick={onClick} title={title} aria-label={title}
       className={`p-2 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 flex items-center justify-center rounded transition-colors ${danger ? 'text-zinc-500 hover:text-red-400 hover:bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}`}>
       {children}
     </button>
