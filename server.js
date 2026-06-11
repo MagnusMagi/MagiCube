@@ -10,6 +10,7 @@ const { ImapFlow } = require('imapflow');
 const { simpleParser } = require('mailparser');
 const MailComposer = require('nodemailer/lib/mail-composer');
 const nodemailer = require('nodemailer');
+const archiver = require('archiver');
 const path = require('path');
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -92,6 +93,8 @@ app.use(session({
 
 const pool = new Map();
 const poolLastUsed = new Map();
+// Dedicated IMAP connections for SSE push notifications (one per session)
+const notifPool = new Map();
 
 setInterval(() => {
   const cutoff = Date.now() - 30 * 60 * 1000;
@@ -323,7 +326,7 @@ app.delete('/api/folders/:folderPath', requireAuth, async (req, res) => {
   }
 });
 
-// ── SSE real-time unread ──────────────────────────────────────────────────────
+// ── SSE real-time unread + new mail push ──────────────────────────────────────
 
 app.get('/api/sse', requireAuth, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
@@ -332,10 +335,19 @@ app.get('/api/sse', requireAuth, async (req, res) => {
   res.flushHeaders();
 
   const { user, pass } = getCreds(req);
+  const sid = req.session.id;
+  let closed = false;
+  let pollInterval = null;
+
+  function send(data) {
+    if (!closed) {
+      try { res.write(`data: ${JSON.stringify(data)}\n\n`); } catch (_) {}
+    }
+  }
 
   async function sendFolderCounts() {
     try {
-      const client = await getImap(req.session.id, user, pass);
+      const client = await getImap(sid, user, pass);
       const folders = await client.list();
       const counts = [];
       for (const f of folders) {
@@ -346,15 +358,67 @@ app.get('/api/sse', requireAuth, async (req, res) => {
           counts.push({ path: f.path, unseen: 0 });
         }
       }
-      res.write(`data: ${JSON.stringify({ type: 'folders', folders: counts })}\n\n`);
+      send({ type: 'folders', folders: counts });
+    } catch (_) {}
+  }
+
+  async function setupNotifClient() {
+    if (closed) return;
+    try {
+      const existing = notifPool.get(sid);
+      if (existing) { existing.logout().catch(() => {}); notifPool.delete(sid); }
+
+      const nc = new ImapFlow({
+        host: IMAP_HOST, port: IMAP_PORT, secure: true,
+        auth: { user, pass },
+        tls: { rejectUnauthorized: false },
+        logger: false,
+      });
+      notifPool.set(sid, nc);
+      await nc.connect();
+      await nc.mailboxOpen('INBOX');
+
+      nc.on('exists', async (data) => {
+        if (closed || data.count <= data.prevCount) return;
+        try {
+          const seqStart = data.prevCount + 1;
+          const messages = [];
+          for await (const msg of nc.fetch(`${seqStart}:*`, { uid: true, flags: true, envelope: true })) {
+            if (msg.flags.has('\\Seen')) continue;
+            const from = msg.envelope.from?.[0];
+            messages.push({
+              uid: msg.uid,
+              subject: msg.envelope.subject || '(No subject)',
+              from: { name: from?.name || '', address: from?.address || '' },
+            });
+          }
+          if (messages.length > 0) send({ type: 'newMail', messages });
+        } catch (_) {}
+        sendFolderCounts();
+      });
+
+      function reconnect() {
+        notifPool.delete(sid);
+        if (!closed) setTimeout(() => setupNotifClient(), 15000);
+      }
+      nc.on('close', reconnect);
+      nc.on('error', reconnect);
     } catch (_) {
-      // ignore connection errors in SSE
+      notifPool.delete(sid);
+      if (!closed) setTimeout(() => setupNotifClient(), 15000);
     }
   }
 
   sendFolderCounts();
-  const interval = setInterval(sendFolderCounts, 30 * 1000);
-  req.on('close', () => clearInterval(interval));
+  setupNotifClient();
+  pollInterval = setInterval(() => { if (!closed) sendFolderCounts(); }, 60 * 1000);
+
+  req.on('close', () => {
+    closed = true;
+    clearInterval(pollInterval);
+    const nc = notifPool.get(sid);
+    if (nc) { nc.logout().catch(() => {}); notifPool.delete(sid); }
+  });
 });
 
 // ── Filter Rules ──────────────────────────────────────────────────────────────
@@ -812,6 +876,178 @@ app.post('/api/draft', requireAuth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── Cross-folder search ───────────────────────────────────────────────────────
+
+app.get('/api/search', requireAuth, async (req, res) => {
+  const q = req.query.q?.trim();
+  if (!q || q.length < 2) return res.json({ results: [] });
+  try {
+    const { user, pass } = getCreds(req);
+    const client = await getImap(req.session.id, user, pass);
+    const folders = await client.list();
+    const results = [];
+    for (const folder of folders.slice(0, 12)) {
+      try {
+        await client.mailboxOpen(folder.path);
+        const uids = await client.search({ or: [{ subject: q }, { from: q }, { body: q }] }, { uid: true });
+        const pageUids = [...uids].reverse().slice(0, 5);
+        if (!pageUids.length) continue;
+        for await (const msg of client.fetch(pageUids, { uid: true, flags: true, envelope: true }, { uid: true })) {
+          const from = msg.envelope.from?.[0];
+          results.push({
+            uid: msg.uid,
+            folder: folder.path,
+            subject: msg.envelope.subject || '(No subject)',
+            from: { name: from?.name || '', address: from?.address || '' },
+            date: msg.envelope.date?.toISOString() || null,
+            read: msg.flags.has('\\Seen'),
+          });
+        }
+      } catch (_) {}
+    }
+    results.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.json({ results: results.slice(0, 30) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Bulk zip attachment download ──────────────────────────────────────────────
+
+app.get('/api/messages/:uid/attachments.zip', requireAuth, async (req, res) => {
+  const folder = req.query.folder || 'INBOX';
+  const uid = parseInt(req.params.uid);
+  if (!uid) return res.status(400).json({ error: 'Invalid UID' });
+  try {
+    const { user, pass } = getCreds(req);
+    const client = await getImap(req.session.id, user, pass);
+    await client.mailboxOpen(folder);
+    let source = null;
+    for await (const msg of client.fetch([uid], { uid: true, source: true }, { uid: true })) {
+      source = msg.source;
+    }
+    if (!source) return res.status(404).json({ error: 'Message not found' });
+    const parsed = await simpleParser(source);
+    const attachments = parsed.attachments || [];
+    if (!attachments.length) return res.status(404).json({ error: 'No attachments' });
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="attachments.zip"');
+    const archive = archiver('zip', { zlib: { level: 6 } });
+    archive.pipe(res);
+    for (const att of attachments) {
+      archive.append(att.content, { name: att.filename || 'attachment' });
+    }
+    await archive.finalize();
+  } catch (err) {
+    if (!res.headersSent) res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Contacts ──────────────────────────────────────────────────────────────────
+
+app.get('/api/contacts', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const all = readJson('contacts.json', {});
+  res.json(all[user] || []);
+});
+
+app.post('/api/contacts', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const { name, address } = req.body || {};
+  if (!address || typeof address !== 'string') return res.status(400).json({ error: 'Missing address' });
+  const all = readJson('contacts.json', {});
+  if (!all[user]) all[user] = [];
+  const idx = all[user].findIndex(c => c.address === address);
+  if (idx >= 0) {
+    all[user][idx] = { ...all[user][idx], name: name || all[user][idx].name };
+  } else {
+    // Rolling window of 500 server-side contacts
+    if (all[user].length >= 500) all[user].shift();
+    all[user].push({ id: crypto.randomUUID(), name: name || '', address });
+  }
+  writeJson('contacts.json', all);
+  res.json({ ok: true });
+});
+
+app.delete('/api/contacts/:id', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const all = readJson('contacts.json', {});
+  if (!all[user]) return res.json({ ok: true });
+  all[user] = all[user].filter(c => c.id !== req.params.id);
+  writeJson('contacts.json', all);
+  res.json({ ok: true });
+});
+
+// ── Labels ────────────────────────────────────────────────────────────────────
+
+app.get('/api/label-defs', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const all = readJson('label-defs.json', {});
+  res.json(all[user] || []);
+});
+
+app.put('/api/label-defs', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const defs = req.body;
+  if (!Array.isArray(defs)) return res.status(400).json({ error: 'Must be an array' });
+  const all = readJson('label-defs.json', {});
+  all[user] = defs.slice(0, 20);
+  writeJson('label-defs.json', all);
+  res.json({ ok: true });
+});
+
+app.get('/api/labels', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const all = readJson('labels.json', {});
+  res.json(all[user] || {});
+});
+
+app.patch('/api/messages/:uid/labels', requireAuth, (req, res) => {
+  const folder = req.query.folder || 'INBOX';
+  const { uid } = req.params;
+  const { add = [], remove = [] } = req.body || {};
+  const { user } = getCreds(req);
+  const all = readJson('labels.json', {});
+  if (!all[user]) all[user] = {};
+  const key = `${folder}:${uid}`;
+  const current = new Set(all[user][key] || []);
+  add.forEach(l => current.add(l));
+  remove.forEach(l => current.delete(l));
+  if (current.size === 0) delete all[user][key];
+  else all[user][key] = [...current];
+  writeJson('labels.json', all);
+  res.json({ ok: true, labels: [...current] });
+});
+
+// ── Templates ─────────────────────────────────────────────────────────────────
+
+app.get('/api/templates', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const all = readJson('templates.json', {});
+  res.json(all[user] || []);
+});
+
+app.post('/api/templates', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const { name, subject, body } = req.body || {};
+  if (!name || typeof name !== 'string') return res.status(400).json({ error: 'Missing name' });
+  const all = readJson('templates.json', {});
+  if (!all[user]) all[user] = [];
+  const tmpl = { id: crypto.randomUUID(), name, subject: subject || '', body: body || '' };
+  all[user].push(tmpl);
+  writeJson('templates.json', all);
+  res.json({ ok: true, template: tmpl });
+});
+
+app.delete('/api/templates/:id', requireAuth, (req, res) => {
+  const { user } = getCreds(req);
+  const all = readJson('templates.json', {});
+  if (!all[user]) return res.json({ ok: true });
+  all[user] = all[user].filter(t => t.id !== req.params.id);
+  writeJson('templates.json', all);
+  res.json({ ok: true });
 });
 
 // ── Global error guards (prevent crash on unhandled async errors) ─────────────

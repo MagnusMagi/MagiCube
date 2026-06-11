@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { gsap } from 'gsap'
 import { useAuth } from './hooks/useAuth'
 import { Login } from './components/Login'
@@ -8,6 +8,8 @@ import { MessageList } from './components/MessageList'
 import { MessageView } from './components/MessageView'
 import { Compose } from './components/Compose'
 import { Settings } from './components/Settings'
+import { ToastContainer } from './components/Toast'
+import { GlobalSearch } from './components/GlobalSearch'
 import { useFolders } from './hooks/useMail'
 
 // Viewport zones:
@@ -25,6 +27,9 @@ export default function App() {
   const [listKey, setListKey] = useState(0)
   const [mobilePanel, setMobilePanel] = useState('sidebar')
   const [theme, setTheme] = useState(() => localStorage.getItem('magicube:theme') || 'dark')
+  const [toasts, setToasts] = useState([])
+  const [showSearch, setShowSearch] = useState(false)
+  const notifPermRef = useRef(false)
 
   const sidebarRef  = useRef(null) // mobile: GSAP panel; tablet+: static (in flow)
   const contentRef  = useRef(null) // mobile: GSAP panel; tablet+: static flex-1
@@ -103,11 +108,48 @@ export default function App() {
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') { setCompose(null); setShowSettings(false) }
+      if (e.key === 'Escape') { setCompose(null); setShowSettings(false); setShowSearch(false) }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setShowSearch(v => !v) }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [])
+
+  const addToast = useCallback((toast) => {
+    const id = Math.random().toString(36).slice(2)
+    setToasts(prev => [...prev.slice(-4), { ...toast, id }])
+  }, [])
+
+  const dismissToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
+
+  const handleNewMail = useCallback((messages) => {
+    if (!messages?.length) return
+    const first = messages[0]
+    const title = `New mail from ${first.from.name || first.from.address}`
+    const body = messages.length > 1
+      ? `${first.subject} (+${messages.length - 1} more)`
+      : first.subject
+    addToast({ type: 'mail', title, body, duration: 6000 })
+
+    // Browser notification
+    if (!notifPermRef.current && Notification.permission === 'default') {
+      Notification.requestPermission().then(p => { notifPermRef.current = p === 'granted' })
+    }
+    if (Notification.permission === 'granted') {
+      try {
+        const n = new Notification(title, { body, icon: '/favicon.ico', tag: 'magicube-mail' })
+        setTimeout(() => n.close(), 6000)
+      } catch (_) {}
+    }
+  }, [addToast])
+
+  // Update tab title with total unread count
+  const totalUnread = folders.reduce((s, f) => s + (f.unseen || 0), 0)
+  useEffect(() => {
+    document.title = totalUnread > 0 ? `(${totalUnread}) MagiCube` : 'MagiCube'
+  }, [totalUnread])
 
   if (loading) return (
     <div className="min-h-dvh bg-zinc-950 flex items-center justify-center">
@@ -145,6 +187,8 @@ export default function App() {
     onLogout: logout,
     onCompose: () => setCompose({}),
     onSettings: () => setShowSettings(true),
+    onSearch: () => setShowSearch(true),
+    onNewMail: handleNewMail,
     theme,
     onToggleTheme: () => setTheme(t => t === 'dark' ? 'light' : 'dark'),
   }
@@ -216,6 +260,13 @@ export default function App() {
         <Compose {...compose} draftFolder={draftFolder} onClose={() => setCompose(null)} />
       )}
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+      {showSearch && (
+        <GlobalSearch
+          onClose={() => setShowSearch(false)}
+          onNavigate={(f, uid) => { handleFolderSelect(f); handleMessageSelect(uid) }}
+        />
+      )}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }

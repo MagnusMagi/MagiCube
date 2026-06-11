@@ -97,4 +97,30 @@ export const mail = {
   addAccount: (user, pass) => req('/api/accounts', { method: 'POST', body: JSON.stringify({ user, pass }) }),
   switchAccount: (index) => req(`/api/accounts/${index}/switch`, { method: 'POST' }),
   removeAccount: (index) => req(`/api/accounts/${index}`, { method: 'DELETE' }),
+
+  // Cross-folder search
+  search: (q) => req(`/api/search?q=${encodeURIComponent(q)}`),
+
+  // Bulk zip attachment download
+  attachmentsZipUrl: (uid, folder) =>
+    `/api/messages/${uid}/attachments.zip?folder=${encodeURIComponent(folder)}`,
+
+  // Server-side contacts
+  getContacts: () => req('/api/contacts'),
+  addContact: (name, address) => req('/api/contacts', { method: 'POST', body: JSON.stringify({ name, address }) }),
+  deleteContact: (id) => req(`/api/contacts/${id}`, { method: 'DELETE' }),
+
+  // Labels
+  getLabelDefs: () => req('/api/label-defs'),
+  saveLabelDefs: (defs) => req('/api/label-defs', { method: 'PUT', body: JSON.stringify(defs) }),
+  getLabels: () => req('/api/labels'),
+  patchLabels: (uid, folder, add, remove) =>
+    req(`/api/messages/${uid}/labels?folder=${encodeURIComponent(folder)}`, {
+      method: 'PATCH', body: JSON.stringify({ add, remove }),
+    }),
+
+  // Templates
+  getTemplates: () => req('/api/templates'),
+  createTemplate: (data) => req('/api/templates', { method: 'POST', body: JSON.stringify(data) }),
+  deleteTemplate: (id) => req(`/api/templates/${id}`, { method: 'DELETE' }),
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { mail } from '../api/mail'
 
-const TABS = ['Compose', 'Reading', 'Accounts', 'Vacation', 'Rules', 'Shortcuts']
+const TABS = ['Compose', 'Reading', 'Accounts', 'Vacation', 'Rules', 'Scheduled', 'Labels', 'Templates', 'Shortcuts']
 
 const SHORTCUTS = [
   { key: 'r',      desc: 'Reply' },
@@ -537,9 +538,151 @@ function RulesTab({ mail }) {
   )
 }
 
+// ─── Scheduled Queue Tab ─────────────────────────────────────────────────────
+
+function ScheduledTab() {
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    mail.getQueue().then(d => { setItems(d); setLoading(false) }).catch(() => setLoading(false))
+  }, [])
+
+  async function cancel(id) {
+    await mail.cancelScheduled(id).catch(() => {})
+    setItems(prev => prev.filter(i => i.id !== id))
+  }
+
+  if (loading) return <div className="text-sm text-zinc-500 py-4">Loading…</div>
+  if (!items.length) return <div className="text-sm text-zinc-500 py-4">No scheduled messages.</div>
+
+  return (
+    <div className="space-y-3">
+      {items.map(item => (
+        <div key={item.id} className="flex items-start justify-between gap-3 bg-zinc-800 rounded-lg px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-sm text-zinc-200 truncate font-medium">{item.subject}</p>
+            <p className="text-xs text-zinc-500 mt-0.5">To: {item.to}</p>
+            <p className="text-xs text-zinc-600 mt-0.5">{new Date(item.scheduledAt).toLocaleString()}</p>
+          </div>
+          <button onClick={() => cancel(item.id)} className="text-xs text-red-400 hover:text-red-300 shrink-0 transition-colors">Cancel</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Labels Tab ──────────────────────────────────────────────────────────────
+
+const LABEL_COLORS = ['#a78bfa','#60a5fa','#34d399','#fbbf24','#f87171','#fb923c']
+
+function LabelsTab() {
+  const [defs, setDefs] = useState([])
+  const [newName, setNewName] = useState('')
+  const [newColor, setNewColor] = useState(LABEL_COLORS[0])
+
+  useEffect(() => {
+    mail.getLabelDefs().then(setDefs).catch(() => {})
+  }, [])
+
+  async function save(next) {
+    setDefs(next)
+    await mail.saveLabelDefs(next).catch(() => {})
+  }
+
+  async function addLabel() {
+    if (!newName.trim()) return
+    const next = [...defs, { id: Math.random().toString(36).slice(2), name: newName.trim(), color: newColor }]
+    await save(next)
+    setNewName('')
+  }
+
+  async function remove(id) {
+    await save(defs.filter(d => d.id !== id))
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        {defs.map(d => (
+          <div key={d.id} className="flex items-center gap-3 bg-zinc-800 rounded-lg px-3 py-2">
+            <span className="w-3 h-3 rounded-full shrink-0" style={{ background: d.color }} />
+            <span className="text-sm text-zinc-200 flex-1">{d.name}</span>
+            <button onClick={() => remove(d.id)} className="text-xs text-zinc-600 hover:text-red-400 transition-colors">Remove</button>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 pt-2 border-t border-zinc-800">
+        <div className="flex gap-1">
+          {LABEL_COLORS.map(c => (
+            <button key={c} onClick={() => setNewColor(c)}
+              className={`w-4 h-4 rounded-full transition-transform ${newColor === c ? 'scale-125 ring-2 ring-white/30' : ''}`}
+              style={{ background: c }} />
+          ))}
+        </div>
+        <input value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addLabel()}
+          placeholder="Label name…" className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500" />
+        <button onClick={addLabel} className="text-xs text-violet-400 hover:text-violet-300 transition-colors px-2 py-1 bg-zinc-800 rounded border border-zinc-700">Add</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Templates Tab ───────────────────────────────────────────────────────────
+
+function TemplatesTab() {
+  const [templates, setTemplates] = useState([])
+  const [form, setForm] = useState({ name: '', subject: '', body: '' })
+  const [creating, setCreating] = useState(false)
+
+  useEffect(() => {
+    mail.getTemplates().then(setTemplates).catch(() => {})
+  }, [])
+
+  async function create() {
+    if (!form.name.trim()) return
+    const res = await mail.createTemplate(form).catch(() => null)
+    if (res?.ok) { setTemplates(prev => [...prev, res.template]); setForm({ name: '', subject: '', body: '' }); setCreating(false) }
+  }
+
+  async function remove(id) {
+    await mail.deleteTemplate(id).catch(() => {})
+    setTemplates(prev => prev.filter(t => t.id !== id))
+  }
+
+  return (
+    <div className="space-y-3">
+      {templates.map(t => (
+        <div key={t.id} className="bg-zinc-800 rounded-lg px-4 py-3 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm text-zinc-200 font-medium">{t.name}</p>
+            {t.subject && <p className="text-xs text-zinc-500 mt-0.5 truncate">Subject: {t.subject}</p>}
+          </div>
+          <button onClick={() => remove(t.id)} className="text-xs text-zinc-600 hover:text-red-400 transition-colors shrink-0">Remove</button>
+        </div>
+      ))}
+      {creating ? (
+        <div className="space-y-2 pt-2 border-t border-zinc-800">
+          <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Template name" className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500" />
+          <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Subject (optional)" className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500" />
+          <textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))} rows={4} placeholder="Body…" className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 resize-none" />
+          <div className="flex gap-2">
+            <button onClick={create} className="text-xs bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded transition-colors">Save</button>
+            <button onClick={() => setCreating(false)} className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors">Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setCreating(true)} className="text-xs text-violet-400 hover:text-violet-300 transition-colors border border-dashed border-zinc-700 rounded-lg px-4 py-2.5 w-full hover:border-violet-700">
+          + New template
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ─── Root component ───────────────────────────────────────────────────────────
 
-export function Settings({ onClose, mail }) {
+export function Settings({ onClose, mail: _mailProp }) {
   const [tab, setTab] = useState('Compose')
   const [displayName, setDisplayName]   = useState(() => readPref('magicube:displayName', ''))
   const [signature, setSignature]       = useState(() => readPref('magicube:signature', ''))
@@ -653,6 +796,12 @@ export function Settings({ onClose, mail }) {
             {tab === 'Vacation' && <VacationTab mail={mail} />}
 
             {tab === 'Rules' && <RulesTab mail={mail} />}
+
+            {tab === 'Scheduled' && <ScheduledTab />}
+
+            {tab === 'Labels' && <LabelsTab />}
+
+            {tab === 'Templates' && <TemplatesTab />}
 
             {tab === 'Shortcuts' && (
               <div>

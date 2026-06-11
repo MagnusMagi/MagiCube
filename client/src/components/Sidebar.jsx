@@ -225,7 +225,7 @@ function NewFolderInput({ onConfirm, onCancel }) {
   )
 }
 
-export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompose, onSettings, theme, onToggleTheme }) {
+export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompose, onSettings, onSearch, onNewMail, theme, onToggleTheme }) {
   const { folders, refresh } = useFolders()
   const [creatingFolder, setCreatingFolder] = useState(false)
   const sseRetryRef = useRef(null)
@@ -273,6 +273,9 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
         const data = JSON.parse(event.data)
         if (data.type === 'folders') {
           refresh()
+        } else if (data.type === 'newMail' && onNewMail) {
+          onNewMail(data.messages)
+          refresh()
         }
       } catch (_) {}
     }
@@ -285,7 +288,7 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
     }
 
     return es
-  }, [refresh])
+  }, [refresh, onNewMail])
 
   useEffect(() => {
     const es = connectSSE()
@@ -336,6 +339,17 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
             Compose
           </button>
         </ClickSpark>
+        <button
+          onClick={onSearch}
+          className="w-full mt-2 flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-500 hover:text-zinc-300 text-xs rounded-lg transition-colors border border-zinc-700/60"
+        >
+          <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 14 14" fill="none">
+            <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M9 9l3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+          <span className="flex-1 text-left">Search all…</span>
+          <kbd className="text-zinc-700 bg-zinc-900 border border-zinc-700 px-1 rounded text-[10px]">⌘K</kbd>
+        </button>
       </div>
 
       <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
