@@ -291,7 +291,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
         </div>
       )}
 
-      <div className="px-6 py-4 border-b border-zinc-800/60 flex items-start gap-3">
+      <div className="px-4 md:px-6 py-4 border-b border-zinc-800/60 flex flex-col md:flex-row md:items-start gap-2 md:gap-3">
         <div className="flex-1 min-w-0">
           <h2 className="text-base font-semibold text-zinc-100 mb-2 leading-tight">{message.subject}</h2>
           <div className="flex flex-wrap gap-1 text-xs text-zinc-500">
@@ -313,7 +313,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
           {message.date && <p className="text-xs text-zinc-500 mt-1.5">{new Date(message.date).toLocaleString()}</p>}
         </div>
 
-        <div className="flex items-center gap-0.5 shrink-0 flex-wrap justify-end">
+        <div className="flex items-center gap-0.5 md:shrink-0 flex-wrap">
           <ActionBtn onClick={handleReply} title="Reply (r)">
             <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M5 3L1 7l4 4M1 7h6a3 3 0 013 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </ActionBtn>
