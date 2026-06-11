@@ -674,7 +674,7 @@ export function Settings({ onClose, mail }) {
 
         {/* Footer — only for tabs with localStorage-backed save */}
         {showFooter && (
-          <div className="flex items-center gap-3 px-5 py-3.5 border-t border-zinc-800 shrink-0">
+          <div className="flex items-center gap-3 px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] border-t border-zinc-800 shrink-0">
             <button onClick={handleSave}
               className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-5 py-2 rounded-lg transition-colors min-w-[5rem]">
               {saved ? 'Saved ✓' : 'Save'}

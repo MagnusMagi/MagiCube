@@ -258,7 +258,7 @@ export function MessageList({ folder, activeUid, onSelect }) {
         }
       </div>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-2 py-1 border-t border-zinc-800/60 text-xs text-zinc-500">
+        <div className="flex items-center justify-between px-2 py-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] border-t border-zinc-800/60 text-xs text-zinc-500">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="disabled:opacity-30 hover:text-zinc-300 transition-colors px-3 py-2.5 min-h-[44px] flex items-center">← Prev</button>
           <span>{page} / {totalPages}</span>
           <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="disabled:opacity-30 hover:text-zinc-300 transition-colors px-3 py-2.5 min-h-[44px] flex items-center">Next →</button>

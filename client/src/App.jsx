@@ -34,7 +34,7 @@ export default function App() {
   }, [])
 
   if (loading) return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+    <div className="min-h-dvh bg-zinc-950 flex items-center justify-center">
       <div className="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
     </div>
   )
@@ -63,7 +63,7 @@ export default function App() {
   const folderLabel = folder.split(/[./]/).pop()
 
   return (
-    <div className="h-screen bg-zinc-950 flex overflow-hidden">
+    <div className="h-dvh bg-zinc-950 flex overflow-hidden">
       {/* Sidebar panel */}
       <div className={`h-full ${mobilePanel === 'sidebar' ? 'flex flex-col flex-1' : 'hidden'} md:flex md:flex-col md:flex-none`}>
         <Sidebar

@@ -411,7 +411,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
 function ActionBtn({ onClick, title, danger, children }) {
   return (
     <button onClick={onClick} title={title}
-      className={`p-1.5 rounded transition-colors ${danger ? 'text-zinc-500 hover:text-red-400 hover:bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}`}>
+      className={`p-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center rounded transition-colors ${danger ? 'text-zinc-500 hover:text-red-400 hover:bg-zinc-800' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}`}>
       {children}
     </button>
   )
