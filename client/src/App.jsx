@@ -80,7 +80,7 @@ export default function App() {
 
       {/* Message list panel */}
       <div className={`h-full flex flex-col ${mobilePanel === 'list' ? 'flex-1' : 'hidden'} md:flex md:flex-none`}>
-        <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800 bg-zinc-950">
+        <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
           <button onClick={() => setMobilePanel('sidebar')}
             className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
             <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
@@ -96,7 +96,7 @@ export default function App() {
 
       {/* Message view panel */}
       <div className={`h-full flex flex-col ${mobilePanel === 'message' ? 'flex-1' : 'hidden'} md:flex md:flex-1`}>
-        <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800 bg-zinc-950">
+        <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
           <button onClick={() => setMobilePanel('list')}
             className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
             <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">

@@ -40,10 +40,10 @@ html.light {
   --color-zinc-200: oklch(20% .008 220);
   --color-zinc-100: oklch(14% .005 220);
   --color-zinc-50:  oklch(10% .003 220);
-  /* anthracite-navy accent for light theme */
-  --color-violet-700: oklch(22% .04 215);
-  --color-violet-600: oklch(30% .05 215);
-  --color-violet-500: oklch(38% .08 215);
-  --color-violet-400: oklch(48% .10 215);
-  --color-violet-300: oklch(58% .10 215);
+  /* deep indigo accent — hue 260 is visually distinct from zinc hue 220 */
+  --color-violet-700: oklch(26% .18 260);
+  --color-violet-600: oklch(36% .22 260);
+  --color-violet-500: oklch(47% .24 260);
+  --color-violet-400: oklch(57% .22 260);
+  --color-violet-300: oklch(66% .18 260);
 }

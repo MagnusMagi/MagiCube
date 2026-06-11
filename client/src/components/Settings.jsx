@@ -163,7 +163,7 @@ function AccountsTab({ mail }) {
                     </button>
                     <button
                       onClick={() => handleRemove(i)}
-                      className="text-xs px-2.5 py-1 rounded bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-colors"
+                      className="text-xs px-2.5 py-1 rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
                     >
                       Remove
                     </button>
@@ -205,7 +205,7 @@ function AccountsTab({ mail }) {
       </div>
 
       {status && (
-        <p className={`text-sm ${status.ok ? 'text-green-400' : 'text-red-400'}`}>
+        <p className={`text-sm ${status.ok ? 'text-emerald-400' : 'text-red-400'}`}>
           {status.msg}
         </p>
       )}
@@ -312,7 +312,7 @@ function VacationTab({ mail }) {
           Save
         </button>
         {status && (
-          <p className={`text-sm ${status.ok ? 'text-green-400' : 'text-red-400'}`}>
+          <p className={`text-sm ${status.ok ? 'text-emerald-400' : 'text-red-400'}`}>
             {status.msg}
           </p>
         )}
@@ -436,7 +436,7 @@ function RulesTab({ mail }) {
               </div>
               <button
                 onClick={() => handleDelete(rule.id)}
-                className="shrink-0 text-xs px-2.5 py-1 rounded bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-colors"
+                className="shrink-0 text-xs px-2.5 py-1 rounded bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
               >
                 Delete
               </button>
@@ -529,7 +529,7 @@ function RulesTab({ mail }) {
       </div>
 
       {status && (
-        <p className={`text-sm ${status.ok ? 'text-green-400' : 'text-red-400'}`}>
+        <p className={`text-sm ${status.ok ? 'text-emerald-400' : 'text-red-400'}`}>
           {status.msg}
         </p>
       )}

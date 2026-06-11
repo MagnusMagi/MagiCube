@@ -286,7 +286,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
       )}
 
       {actionError && (
-        <div className="bg-red-900/40 border-b border-red-800/60 px-6 py-2.5 text-xs text-red-400">
+        <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-2.5 text-xs text-red-400">
           {actionError}
         </div>
       )}
@@ -372,7 +372,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
               srcDoc={displayHtml}
               sandbox="allow-same-origin"
               referrerPolicy="no-referrer"
-              className="w-full border-0 bg-white rounded-lg"
+              className="w-full border-0 rounded-lg ring-1 ring-zinc-700/50"
               style={{ minHeight: 400 }}
               title="Email content"
               onLoad={e => {

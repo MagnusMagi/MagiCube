@@ -40,7 +40,7 @@ function groupIntoThreads(messages) {
 
 function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented }) {
   return (
-    <SpotlightCard spotlightColor={active ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.07)'} className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-violet-600/10' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-violet-500' : ''} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
+    <SpotlightCard spotlightColor={active ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.07)'} className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-violet-600/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-violet-500' : ''} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
       <div className={`flex items-center shrink-0 ${indented ? 'pl-6 pr-1' : 'pl-3 pr-1'}`}>
         <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
           className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
@@ -48,7 +48,7 @@ function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented 
       </div>
       <button onClick={() => onSelect(msg.uid)} className="flex-1 text-left px-3 py-3.5 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-1">
-          <span className={`text-sm truncate ${msg.read ? 'text-zinc-400' : 'text-white font-medium'}`}>{msg.from.name || msg.from.address}</span>
+          <span className={`text-sm truncate ${msg.read ? 'text-zinc-400' : 'text-zinc-100 font-medium'}`}>{msg.from.name || msg.from.address}</span>
           <span className="text-xs text-zinc-500 shrink-0">{formatDate(msg.date)}</span>
         </div>
         <div className={`text-xs truncate ${msg.read ? 'text-zinc-500' : 'text-zinc-300'}`}>{msg.subject}</div>
@@ -62,7 +62,7 @@ function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, 
   const isAnyActive = thread.uids.some(uid => uid === activeUid)
 
   return (
-    <div className={`border-b border-zinc-800/40 ${isAnyActive ? 'bg-violet-600/5' : ''}`}>
+    <div className={`border-b border-zinc-800/40 ${isAnyActive ? 'bg-violet-600/10' : ''}`}>
       <div className={`group relative flex items-stretch transition-colors ${isAnyActive ? 'border-l-2 border-l-violet-500' : ''} ${!expanded ? 'hover:bg-zinc-800/40' : 'bg-zinc-800/20'}`}>
         <div className="flex items-center pl-3 pr-1 shrink-0">
           <input
@@ -80,7 +80,7 @@ function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, 
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="text-zinc-500 text-xs shrink-0">{expanded ? '▼' : '▶'}</span>
-              <span className={`text-sm truncate ${thread.hasUnread ? 'text-white font-medium' : 'text-zinc-400'}`}>
+              <span className={`text-sm truncate ${thread.hasUnread ? 'text-zinc-100 font-medium' : 'text-zinc-400'}`}>
                 {latestMsg.from.name || latestMsg.from.address}
               </span>
               {thread.messages.length > 1 && (
@@ -196,7 +196,7 @@ export function MessageList({ folder, activeUid, onSelect }) {
   const allSelected = selectedUids.size === messages.length && messages.length > 0
 
   return (
-    <div className="w-full md:w-80 shrink-0 h-full flex flex-col border-r border-zinc-800/60 bg-zinc-900/40">
+    <div className="w-full md:w-80 shrink-0 h-full flex flex-col border-r border-zinc-800/60 bg-zinc-900/60">
       <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
         <BlurText key={folder} text={(() => { const r = folder ? folder.split(/[./]/).pop() : 'Inbox'; return r === r.toUpperCase() ? r[0] + r.slice(1).toLowerCase() : r })()} delay={50} stepDuration={0.2} className="hidden md:flex text-sm font-semibold text-zinc-200 flex-1" />
         <div className="flex-1 md:hidden" />
