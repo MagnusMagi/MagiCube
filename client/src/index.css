@@ -11,13 +11,14 @@
   }
   pre { font-family: inherit; line-height: inherit; }
   input, button, textarea, select { font: inherit; }
-  /* iOS Safari: prevent auto-zoom on inputs with font-size < 16px */
-  @media (max-width: 767px) {
-    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-    textarea,
-    select {
-      font-size: max(1rem, 16px);
-    }
+}
+
+/* iOS Safari: prevent auto-zoom — must be outside @layer base to override Tailwind text-* utilities */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: max(1rem, 16px) !important;
   }
 }
 
