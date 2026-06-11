@@ -55,28 +55,40 @@ function countWords(text) {
 function AddressInput({ value, onChange, placeholder }) {
   const [suggestions, setSuggestions] = useState([])
   const [open, setOpen] = useState(false)
+  const [activeIdx, setActiveIdx] = useState(-1)
   const [dropdownStyle, setDropdownStyle] = useState({})
   const contacts = useRef(loadContacts())
   const wrapperRef = useRef(null)
+  const dropdownRef = useRef(null)
 
   function updateDropdownPos() {
     const rect = wrapperRef.current?.getBoundingClientRect()
     if (rect) setDropdownStyle({ position: 'fixed', top: rect.bottom + 4, left: rect.left, width: Math.max(288, rect.width), zIndex: 10000 })
   }
 
+  function getSuggestions(token) {
+    if (!contacts.current.length) return []
+    if (!token) return contacts.current.slice(0, 8)
+    return contacts.current
+      .filter(c => c.name.toLowerCase().includes(token.toLowerCase()) || c.address.toLowerCase().includes(token.toLowerCase()))
+      .slice(0, 8)
+  }
+
   function handleChange(e) {
     onChange(e.target.value)
-    const token = lastToken(e.target.value)
-    if (token.length >= 1) {
-      const filtered = contacts.current
-        .filter(c => c.name.toLowerCase().includes(token.toLowerCase()) || c.address.toLowerCase().includes(token.toLowerCase()))
-        .slice(0, 5)
+    const filtered = getSuggestions(lastToken(e.target.value))
+    setSuggestions(filtered)
+    setActiveIdx(-1)
+    if (filtered.length > 0) updateDropdownPos()
+    setOpen(filtered.length > 0)
+  }
+
+  function handleFocus() {
+    const filtered = getSuggestions(lastToken(value))
+    if (filtered.length > 0) {
+      updateDropdownPos()
       setSuggestions(filtered)
-      if (filtered.length > 0) updateDropdownPos()
-      setOpen(filtered.length > 0)
-    } else {
-      setSuggestions([])
-      setOpen(false)
+      setOpen(true)
     }
   }
 
@@ -85,14 +97,20 @@ function AddressInput({ value, onChange, placeholder }) {
     const prefix = value.slice(0, value.length - token.length)
     onChange(prefix + contact.address + ', ')
     setSuggestions([])
+    setActiveIdx(-1)
     setOpen(false)
   }
 
   useEffect(() => {
     function onDown(e) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false)
+      if (
+        wrapperRef.current && !wrapperRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) {
+        setOpen(false)
+        setActiveIdx(-1)
+      }
     }
-    // M4: pointerdown works on touch too; dropdown portalled to body to escape overflow-hidden
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
   }, [])
@@ -100,16 +118,30 @@ function AddressInput({ value, onChange, placeholder }) {
   return (
     <div className="relative flex-1" ref={wrapperRef}>
       <input
-        type="text" value={value} onChange={handleChange}
-        onKeyDown={e => e.key === 'Escape' && setOpen(false)}
+        type="text" value={value} onChange={handleChange} onFocus={handleFocus}
+        onKeyDown={e => {
+          if (e.key === 'Escape') { setOpen(false); setActiveIdx(-1); return }
+          if (!open) return
+          if (e.key === 'ArrowDown') {
+            e.preventDefault()
+            setActiveIdx(i => Math.min(i + 1, suggestions.length - 1))
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault()
+            setActiveIdx(i => Math.max(i - 1, -1))
+          } else if (e.key === 'Enter' && activeIdx >= 0 && suggestions[activeIdx]) {
+            e.preventDefault()
+            handleSelect(suggestions[activeIdx])
+          }
+        }}
         placeholder={placeholder} spellCheck="true"
         className="w-full bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none"
       />
       {open && createPortal(
-        <div style={dropdownStyle} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden">
+        <div ref={dropdownRef} style={dropdownStyle} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden">
           {suggestions.map((c, i) => (
-            <button key={i} type="button" onMouseDown={e => { e.preventDefault(); handleSelect(c) }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex flex-col">
+            <button key={i} type="button"
+              onPointerDown={e => { e.preventDefault(); handleSelect(c) }}
+              className={`w-full text-left px-3 py-2 text-sm transition-colors flex flex-col ${i === activeIdx ? 'bg-zinc-700' : 'hover:bg-zinc-700'}`}>
               <span className="text-zinc-200 font-medium">{c.name}</span>
               <span className="text-zinc-500 text-xs">{c.address}</span>
             </button>
