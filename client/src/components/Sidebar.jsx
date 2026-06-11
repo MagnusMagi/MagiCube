@@ -123,7 +123,7 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDr
       onDrop={onDrop}
       onDragEnd={onDragEnd}
     >
-      <div className="hidden md:flex opacity-0 group-hover:opacity-100 cursor-grab pl-1 shrink-0 text-zinc-700 hover:text-zinc-500 transition-colors">
+      <div className="hidden lg:flex opacity-0 group-hover:opacity-100 cursor-grab pl-1 shrink-0 text-zinc-700 hover:text-zinc-500 transition-colors">
         <svg className="w-2.5 h-3.5" viewBox="0 0 6 10" fill="currentColor">
           <circle cx="1.5" cy="1.5" r="1"/><circle cx="4.5" cy="1.5" r="1"/>
           <circle cx="1.5" cy="5" r="1"/><circle cx="4.5" cy="5" r="1"/>
@@ -142,7 +142,7 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDr
           </span>
         )}
       </button>
-      <div className="opacity-100 md:opacity-0 md:group-hover:opacity-100 flex items-center gap-0.5 transition-all">
+      <div className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 flex items-center gap-0.5 transition-all">
         {canEmpty && (
           <button
             onClick={() => onEmpty(folder.path)}
