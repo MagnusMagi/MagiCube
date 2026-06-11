@@ -9,11 +9,26 @@ export function useFolders() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
+    let cancelled = false
     const controller = new AbortController()
-    mail.folders(controller.signal)
-      .then(setFolders)
-      .catch(e => { if (e.name !== 'AbortError') setError(e.message) })
-    return () => controller.abort()
+
+    async function load(attempt = 0) {
+      try {
+        const data = await mail.folders(controller.signal)
+        if (!cancelled) { setFolders(data); setError(null) }
+      } catch (e) {
+        if (e.name === 'AbortError' || cancelled) return
+        if (attempt < 3) {
+          await new Promise(r => setTimeout(r, 800 * Math.pow(2, attempt)))
+          if (!cancelled) load(attempt + 1)
+        } else {
+          if (!cancelled) setError(e.message)
+        }
+      }
+    }
+
+    load()
+    return () => { cancelled = true; controller.abort() }
   }, [refreshKey])
 
   const refresh = useCallback(() => setRefreshKey(k => k + 1), [])
