@@ -277,7 +277,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {confirmDelete && (
-        <div className="bg-zinc-800 border-b border-zinc-700 px-6 py-3 flex items-center gap-3">
+        <div className="bg-zinc-800 border-b border-zinc-700 px-4 py-3 flex flex-wrap items-center gap-2 md:gap-3">
           <span className="text-sm text-zinc-300 flex-1">Delete this message permanently?</span>
           {deleteError && <span className="text-xs text-red-400">{deleteError}</span>}
           <button onClick={handleDelete} className="bg-red-600 hover:bg-red-500 text-white text-xs font-medium px-3 py-1.5 rounded transition-colors">Delete</button>
@@ -331,7 +331,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
               <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M1 3h5l2 2h5v7H1z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </ActionBtn>
             {showMoveMenu && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-20 overflow-hidden">
+              <div className="absolute left-0 md:left-auto md:right-0 top-full mt-1 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-20 overflow-hidden">
                 {folders.filter(f => f.path !== folder).map(f => (
                   <button key={f.path} onClick={() => handleMove(f.path)}
                     className="w-full text-left px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-700 transition-colors truncate">
@@ -355,7 +355,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 md:p-6">
         {showSource ? (
           <pre className="text-xs text-zinc-400 whitespace-pre-wrap font-mono leading-relaxed bg-zinc-900 rounded p-4 overflow-x-auto">
             {rawSource}

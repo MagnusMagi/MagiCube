@@ -460,8 +460,9 @@ function RulesTab({ mail }) {
         />
 
         {/* Condition row */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <StyledSelect
+            className="flex-1 min-w-[6rem]"
             value={form.condField}
             onChange={e => setField('condField', e.target.value)}
           >
@@ -470,6 +471,7 @@ function RulesTab({ mail }) {
             ))}
           </StyledSelect>
           <StyledSelect
+            className="flex-1 min-w-[7rem]"
             value={form.condOp}
             onChange={e => setField('condOp', e.target.value)}
           >
@@ -482,12 +484,12 @@ function RulesTab({ mail }) {
             value={form.condValue}
             onChange={e => setField('condValue', e.target.value)}
             placeholder="Value"
-            className={inputCls('flex-1')}
+            className={inputCls('flex-1 min-w-[8rem]')}
           />
         </div>
 
         {/* Action row */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <StyledSelect
             value={form.actionType}
             onChange={e => setField('actionType', e.target.value)}
@@ -573,19 +575,19 @@ export function Settings({ onClose, mail }) {
         </div>
 
         {/* Body */}
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          {/* Left nav */}
-          <nav className="w-36 shrink-0 border-r border-zinc-800 p-2 flex flex-col gap-0.5">
+        <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden">
+          {/* Nav — horizontal scroll on mobile, vertical on desktop */}
+          <nav className="shrink-0 md:w-36 flex md:flex-col gap-0.5 overflow-x-auto md:overflow-visible border-b md:border-b-0 md:border-r border-zinc-800 px-2 py-1.5 md:p-2">
             {TABS.map(t => (
               <button key={t} onClick={() => setTab(t)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${tab === t ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
+                className={`shrink-0 md:w-full text-left px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${tab === t ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
                 {t}
               </button>
             ))}
           </nav>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-5">
+          <div className="flex-1 overflow-y-auto p-4 md:p-5">
 
             {tab === 'Compose' && (
               <div className="space-y-5">

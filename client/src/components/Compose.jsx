@@ -484,26 +484,28 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
 
         {/* Scheduled send picker */}
         {showSchedule && (
-          <div className="mx-4 mb-2 flex items-center gap-3 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5">
+          <div className="mx-4 mb-2 flex flex-col sm:flex-row sm:items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3">
             <input
               type="datetime-local"
               value={scheduledAt}
               onChange={e => setScheduledAt(e.target.value)}
               className="flex-1 bg-zinc-900 border border-zinc-700 text-sm text-zinc-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-500"
             />
-            <button
-              onClick={handleScheduleSend}
-              disabled={scheduling}
-              className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
-            >
-              {scheduling ? 'Scheduling…' : 'Schedule'}
-            </button>
-            <button
-              onClick={() => { setShowSchedule(false); setScheduleDropdown(false) }}
-              className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
-            >
-              Cancel
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleScheduleSend}
+                disabled={scheduling}
+                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
+              >
+                {scheduling ? 'Scheduling…' : 'Schedule'}
+              </button>
+              <button
+                onClick={() => { setShowSchedule(false); setScheduleDropdown(false) }}
+                className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 
