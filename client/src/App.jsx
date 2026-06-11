@@ -18,6 +18,12 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [listKey, setListKey] = useState(0)
   const [mobilePanel, setMobilePanel] = useState('sidebar')
+  const [theme, setTheme] = useState(() => localStorage.getItem('magicube:theme') || 'dark')
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', theme === 'light')
+    localStorage.setItem('magicube:theme', theme)
+  }, [theme])
 
   useEffect(() => {
     function onKey(e) {
@@ -67,6 +73,8 @@ export default function App() {
           onLogout={logout}
           onCompose={() => setCompose({})}
           onSettings={() => setShowSettings(true)}
+          theme={theme}
+          onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
         />
       </div>
 
