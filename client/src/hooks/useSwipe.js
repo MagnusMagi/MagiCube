@@ -6,15 +6,21 @@ const MAX_DRAG  = 120
 export function useSwipe({ onSwipeLeft, onSwipeRight }) {
   const startX  = useRef(null)
   const startY  = useRef(null)
-  const locked  = useRef(null) // 'h' | 'v' | null
+  const locked  = useRef(null)
   const dragX   = useRef(0)
-  const contentRef = useRef(null)
+  const contentRef   = useRef(null)
+  const leftHintRef  = useRef(null)  // shown when swiping right (read/unread)
+  const rightHintRef = useRef(null)  // shown when swiping left (delete)
 
-  // Keep callbacks in refs to avoid stale closures in native listener (H2)
   const onSwipeLeftRef  = useRef(onSwipeLeft)
   const onSwipeRightRef = useRef(onSwipeRight)
   useEffect(() => { onSwipeLeftRef.current  = onSwipeLeft  }, [onSwipeLeft])
   useEffect(() => { onSwipeRightRef.current = onSwipeRight }, [onSwipeRight])
+
+  const resetHints = useCallback(() => {
+    if (leftHintRef.current)  leftHintRef.current.style.opacity  = '0'
+    if (rightHintRef.current) rightHintRef.current.style.opacity = '0'
+  }, [])
 
   const onTouchStart = useCallback((e) => {
     if (e.touches.length !== 1) return  // M3: ignore multi-touch
@@ -26,7 +32,7 @@ export function useSwipe({ onSwipeLeft, onSwipeRight }) {
     if (el) el.style.transition = 'none'
   }, [])
 
-  // H2: non-passive touchmove so we can preventDefault for confirmed horizontal swipes
+  // H2: non-passive touchmove so we can preventDefault for horizontal swipes
   useEffect(() => {
     const el = contentRef.current
     if (!el) return
@@ -43,6 +49,11 @@ export function useSwipe({ onSwipeLeft, onSwipeRight }) {
       if (locked.current === 'v') return
 
       e.preventDefault()
+
+      // Show only the relevant hint based on swipe direction
+      if (leftHintRef.current)  leftHintRef.current.style.opacity  = dx > 0 ? '1' : '0'
+      if (rightHintRef.current) rightHintRef.current.style.opacity = dx < 0 ? '1' : '0'
+
       const clamped = Math.sign(dx) * Math.min(Math.abs(dx), MAX_DRAG)
       dragX.current = clamped
       el.style.transform = `translateX(${clamped}px)`
@@ -66,7 +77,9 @@ export function useSwipe({ onSwipeLeft, onSwipeRight }) {
         setTimeout(() => {
           onSwipeLeftRef.current?.()
           if (el) { el.style.transition = 'none'; el.style.transform = '' }
+          resetHints()
         }, 180)
+        return
       } else if (dx > 0 && onSwipeRightRef.current) {
         onSwipeRightRef.current?.()
         if (el) {
@@ -81,10 +94,11 @@ export function useSwipe({ onSwipeLeft, onSwipeRight }) {
       }
     }
 
+    resetHints()
     startX.current = null
     dragX.current  = 0
     locked.current = null
-  }, [])
+  }, [resetHints])
 
-  return { contentRef, onTouchStart, onTouchEnd }
+  return { contentRef, leftHintRef, rightHintRef, onTouchStart, onTouchEnd }
 }

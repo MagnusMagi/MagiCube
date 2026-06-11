@@ -42,30 +42,31 @@ function groupIntoThreads(messages) {
 }
 
 function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented, onContextMenu, onSwipeDelete, onSwipeToggleRead }) {
-  const { contentRef, onTouchStart, onTouchEnd } = useSwipe({
+  const { contentRef, leftHintRef, rightHintRef, onTouchStart, onTouchEnd } = useSwipe({
     onSwipeLeft:  onSwipeDelete,
     onSwipeRight: onSwipeToggleRead,
   })
 
   return (
     <div className="relative overflow-hidden">
-      {/* Delete hint — revealed on left swipe */}
-      <div className="absolute inset-0 flex items-center justify-end pr-5 bg-red-500/15 pointer-events-none">
-        <svg className="w-4 h-4 text-red-400" viewBox="0 0 16 16" fill="none">
+      {/* Delete hint — revealed on left swipe, starts hidden */}
+      <div ref={rightHintRef} className="absolute inset-0 flex items-center justify-end pr-5 bg-red-500/25 pointer-events-none" style={{ opacity: 0 }}>
+        <svg className="w-5 h-5 text-red-400" viewBox="0 0 16 16" fill="none">
           <path d="M13 4H3M6 4V3h4v1M5 4v8a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       </div>
-      {/* Read/Unread hint — revealed on right swipe */}
-      <div className="absolute inset-0 flex items-center pl-5 bg-violet-500/15 pointer-events-none">
-        <svg className="w-4 h-4 text-violet-400" viewBox="0 0 16 16" fill="none">
+      {/* Read/Unread hint — revealed on right swipe, starts hidden */}
+      <div ref={leftHintRef} className="absolute inset-0 flex items-center pl-5 bg-violet-500/25 pointer-events-none" style={{ opacity: 0 }}>
+        <svg className="w-5 h-5 text-violet-400" viewBox="0 0 16 16" fill="none">
           <rect x="1" y="5" width="14" height="9" rx="1" stroke="currentColor" strokeWidth="1.3"/>
           <path d="M1 6l7 4.5 7-4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
           {msg.read && <circle cx="14" cy="3" r="2.5" fill="currentColor"/>}
         </svg>
       </div>
-      {/* Swipeable content */}
+      {/* Swipeable content — opaque so hints are hidden when at rest */}
       <div
         ref={contentRef}
+        className="bg-zinc-900"
         style={{ touchAction: 'pan-y' }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -75,8 +76,8 @@ function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented,
           className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-400' : !msg.read && !indented ? 'border-l-2 border-l-violet-500' : 'border-l-2 border-l-transparent'} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}
           onContextMenu={e => onContextMenu?.(e, msg)}
         >
-          {/* H5: 44px touch target for checkbox */}
-          <div className={`flex items-center justify-center shrink-0 w-[44px] min-h-[44px] ${indented ? 'pl-4' : 'pl-1'}`}>
+          {/* H5: 44px touch target for checkbox — margin handles indent, no padding that skews center */}
+          <div className={`flex items-center justify-center shrink-0 w-[44px] min-h-[44px] ${indented ? 'ml-3' : ''}`}>
             <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
               className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
               style={{ opacity: selected ? 1 : undefined }} />
