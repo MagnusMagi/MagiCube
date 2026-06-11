@@ -25,7 +25,7 @@ export default function App() {
   const [compose, setCompose] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
   const [listKey, setListKey] = useState(0)
-  const [mobilePanel, setMobilePanel] = useState('sidebar')
+  const [mobilePanel, setMobilePanel] = useState('list')
   const [theme, setTheme] = useState(() => localStorage.getItem('magicube:theme') || 'dark')
   const [toasts, setToasts] = useState([])
   const [showSearch, setShowSearch] = useState(false)
