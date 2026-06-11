@@ -258,6 +258,15 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
   const [scheduling, setScheduling] = useState(false)
 
   const [size, setSize] = useState({ width: 672, height: 520 })
+  const [windowWidth, setWindowWidth] = useState(() => window.innerWidth)
+
+  useEffect(() => {
+    const onResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const isMobile = windowWidth < 768
 
   const fileRef = useRef(null)
   const editorRef = useRef(null)
@@ -467,13 +476,13 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
   const pMeta = PRIORITY_META[priority]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4 bg-black/60 backdrop-blur-sm">
+    <div className={`fixed inset-0 z-50 flex ${isMobile ? '' : 'items-end sm:items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4 bg-black/60 backdrop-blur-sm'}`}>
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className="relative bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
-        style={{ width: size.width, height: size.height, maxWidth: 'calc(100vw - 2rem)', maxHeight: 'calc(100dvh - 2rem)' }}
+        className={`relative flex flex-col overflow-hidden ${isMobile ? 'w-full h-full bg-zinc-950' : 'bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl'}`}
+        style={isMobile ? undefined : { width: size.width, height: size.height, maxWidth: 'calc(100vw - 2rem)', maxHeight: 'calc(100dvh - 2rem)' }}
       >
         {/* Drag-and-drop overlay */}
         {isDragging && (
@@ -695,13 +704,15 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           )}
         </div>
 
-        {/* Resize handle */}
-        <div onMouseDown={handleResizeStart}
-          className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-1 text-zinc-700 hover:text-zinc-500 transition-colors">
-          <svg viewBox="0 0 8 8" className="w-2.5 h-2.5" fill="none">
-            <path d="M7 1L1 7M7 4L4 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-          </svg>
-        </div>
+        {/* Resize handle — desktop only */}
+        {!isMobile && (
+          <div onMouseDown={handleResizeStart}
+            className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-1 text-zinc-700 hover:text-zinc-500 transition-colors">
+            <svg viewBox="0 0 8 8" className="w-2.5 h-2.5" fill="none">
+              <path d="M7 1L1 7M7 4L4 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+            </svg>
+          </div>
+        )}
       </div>
     </div>
   )
