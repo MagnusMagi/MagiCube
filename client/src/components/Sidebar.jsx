@@ -17,7 +17,8 @@ const SYSTEM_FOLDERS = ['INBOX', 'Sent', 'Drafts', 'Trash', 'Spam', 'Junk']
 const EMPTIED_LABELS = ['trash', 'spam', 'junk', 'deleted']
 
 function folderLabel(path) {
-  return path.split(/[./]/).pop()
+  const raw = path.split(/[./]/).pop()
+  return raw === raw.toUpperCase() ? raw[0] + raw.slice(1).toLowerCase() : raw
 }
 
 function isSystemFolder(label) {

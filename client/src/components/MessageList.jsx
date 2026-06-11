@@ -198,7 +198,7 @@ export function MessageList({ folder, activeUid, onSelect }) {
   return (
     <div className="w-full md:w-80 shrink-0 h-full flex flex-col border-r border-zinc-800/60 bg-zinc-900/40">
       <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
-        <BlurText key={folder} text={folder ? folder.split(/[./]/).pop() : 'Inbox'} delay={50} stepDuration={0.2} className="hidden md:flex text-sm font-semibold text-zinc-200 flex-1" />
+        <BlurText key={folder} text={(() => { const r = folder ? folder.split(/[./]/).pop() : 'Inbox'; return r === r.toUpperCase() ? r[0] + r.slice(1).toLowerCase() : r })()} delay={50} stepDuration={0.2} className="hidden md:flex text-sm font-semibold text-zinc-200 flex-1" />
         <div className="flex-1 md:hidden" />
         <div className="flex rounded-md overflow-hidden border border-zinc-700/60 shrink-0">
           <button
