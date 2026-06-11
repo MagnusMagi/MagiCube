@@ -324,7 +324,7 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
   }
 
   return (
-    <aside className="w-full md:w-56 shrink-0 h-full bg-zinc-950 border-r border-zinc-800/60 flex flex-col">
+    <aside className="w-full lg:w-56 shrink-0 h-full bg-zinc-950 border-r border-zinc-800/60 flex flex-col">
       <div className="p-4 border-b border-zinc-800/60">
         <ShinyText text="MagiCube" speed={4} color="#71717a" shineColor={theme === 'light' ? '#1e3a5f' : '#e4e4e7'} className="text-base font-semibold tracking-tight mb-3 block" />
         <ClickSpark sparkColor={theme === 'light' ? '#1e3a5f' : '#a78bfa'} sparkCount={8} sparkSize={8} sparkRadius={24} duration={500}>
@@ -343,7 +343,7 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
         <button
           onClick={() => setCreatingFolder(true)}
           title="New folder"
-          className="p-0.5 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors rounded"
+          className="p-0.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors rounded"
         >
           <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
         </button>
@@ -378,14 +378,14 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
         <div className="text-xs text-zinc-500 truncate mb-2 px-1">{user}</div>
         <div className="flex items-center gap-2">
           <button onClick={onLogout} className="flex-1 text-left text-xs text-zinc-500 hover:text-zinc-300 px-1 py-1 transition-colors">Sign out</button>
-          <button onClick={onToggleTheme} title={theme === 'light' ? 'Dark mode' : 'Light mode'} className="p-1 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors rounded">
+          <button onClick={onToggleTheme} title={theme === 'light' ? 'Dark mode' : 'Light mode'} className="p-1 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors rounded">
             {theme === 'light' ? (
               <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M11 7.5A4.5 4.5 0 016 2a4.5 4.5 0 100 9 4.5 4.5 0 005-3.5z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
             ) : (
               <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.3"/><path d="M7 1.5V3M7 11v1.5M1.5 7H3M11 7h1.5M3.4 3.4l1 1M9.6 9.6l1 1M3.4 10.6l1-1M9.6 4.4l1-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
             )}
           </button>
-          <button onClick={onSettings} title="Settings" className="p-1 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors rounded">
+          <button onClick={onSettings} title="Settings" className="p-1 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-colors rounded">
             <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.3"/><path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.93 2.93l1.06 1.06M10.01 10.01l1.06 1.06M2.93 11.07l1.06-1.06M10.01 3.99l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
           </button>
         </div>

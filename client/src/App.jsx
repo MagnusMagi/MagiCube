@@ -30,14 +30,14 @@ export default function App() {
 
   // Set initial panel positions before first paint (fires when panels mount after login)
   useLayoutEffect(() => {
-    if (!sidebarRef.current || window.innerWidth >= 768) return
+    if (!sidebarRef.current || window.innerWidth >= 1024) return
     const idx = PANELS.indexOf(mobilePanel)
     panelRefs.forEach((ref, i) => gsap.set(ref.current, { x: `${(i - idx) * 100}%` }))
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Animate panels when active panel changes
   useEffect(() => {
-    if (!sidebarRef.current || window.innerWidth >= 768) return
+    if (!sidebarRef.current || window.innerWidth >= 1024) return
     const idx = PANELS.indexOf(mobilePanel)
     panelRefs.forEach((ref, i) => {
       gsap.to(ref.current, { x: `${(i - idx) * 100}%`, duration: 0.34, ease: 'power2.inOut' })
@@ -48,7 +48,7 @@ export default function App() {
   useEffect(() => {
     function onResize() {
       if (!sidebarRef.current) return
-      if (window.innerWidth >= 768) {
+      if (window.innerWidth >= 1024) {
         panelRefs.forEach(ref => gsap.set(ref.current, { clearProps: 'transform' }))
       } else {
         const idx = PANELS.indexOf(mobilePanel)
@@ -104,10 +104,10 @@ export default function App() {
   return (
     <div className="h-dvh bg-zinc-950 flex overflow-hidden">
       {/* Wrapper: stacking context on mobile, transparent on desktop */}
-      <div className="relative flex-1 overflow-hidden md:contents">
+      <div className="relative flex-1 overflow-hidden lg:contents">
 
         {/* Sidebar panel */}
-        <div ref={sidebarRef} className="absolute inset-0 flex flex-col md:relative md:inset-auto md:flex-none">
+        <div ref={sidebarRef} className="absolute inset-0 flex flex-col lg:relative lg:inset-auto lg:flex-none">
           <Sidebar
             activeFolder={folder}
             onFolderSelect={handleFolderSelect}
@@ -121,8 +121,8 @@ export default function App() {
         </div>
 
         {/* Message list panel */}
-        <div ref={listRef} className="absolute inset-0 flex flex-col md:relative md:inset-auto md:flex-none">
-          <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
+        <div ref={listRef} className="absolute inset-0 flex flex-col lg:relative lg:inset-auto lg:flex-none">
+          <div className="lg:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
             <button onClick={() => setMobilePanel('sidebar')}
               className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
               <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
@@ -137,8 +137,8 @@ export default function App() {
         </div>
 
         {/* Message view panel */}
-        <div ref={messageRef} className="absolute inset-0 flex flex-col md:relative md:inset-auto md:flex-1">
-          <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
+        <div ref={messageRef} className="absolute inset-0 flex flex-col lg:relative lg:inset-auto lg:flex-1">
+          <div className="lg:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
             <button onClick={() => setMobilePanel('list')}
               className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
               <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
