@@ -119,6 +119,12 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
   const [showSource, setShowSource] = useState(false)
   const [rawSource, setRawSource] = useState(null)
   const [showMoveMenu, setShowMoveMenu] = useState(false)
+  const [actionError, setActionError] = useState('')
+
+  function showError(msg) {
+    setActionError(msg)
+    setTimeout(() => setActionError(''), 3000)
+  }
 
   useEffect(() => { if (message) setStarred(message.starred) }, [message])
   useEffect(() => { setShowImages(false); setShowSource(false); setRawSource(null); setConfirmDelete(false) }, [uid])
@@ -201,10 +207,14 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
     })
   }
 
-  function handleMarkUnread() {
-    mail.flags(uid, folder, [], ['\\Seen']).catch(() => {})
-    onDeleted()
-    onRefreshList()
+  async function handleMarkUnread() {
+    try {
+      await mail.flags(uid, folder, [], ['\\Seen'])
+      onDeleted()
+      onRefreshList()
+    } catch (_) {
+      showError('Failed to mark as unread')
+    }
   }
 
   async function handleDelete() {
@@ -229,14 +239,20 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
     try {
       await mail.move(uid, folder, destination)
       onDeleted(); onRefreshList()
-    } catch (_) {}
+    } catch (_) {
+      showError('Failed to move message')
+    }
   }
 
   async function handleShowSource() {
     if (rawSource !== null) { setShowSource(v => !v); return }
-    const src = await mail.source(uid, folder).catch(() => '')
-    setRawSource(src)
-    setShowSource(true)
+    try {
+      const src = await mail.source(uid, folder)
+      setRawSource(src)
+      setShowSource(true)
+    } catch (_) {
+      showError('Failed to load message source')
+    }
   }
 
   if (!uid) {
@@ -269,6 +285,12 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
         </div>
       )}
 
+      {actionError && (
+        <div className="bg-red-900/40 border-b border-red-800/60 px-6 py-2.5 text-xs text-red-400">
+          {actionError}
+        </div>
+      )}
+
       <div className="px-6 py-4 border-b border-zinc-800/60 flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <h2 className="text-base font-semibold text-white mb-2 leading-tight">{message.subject}</h2>
@@ -293,16 +315,16 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
 
         <div className="flex items-center gap-0.5 shrink-0 flex-wrap justify-end">
           <ActionBtn onClick={handleReply} title="Reply (r)">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M5 3L1 7l4 4M1 7h8a4 4 0 010 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M5 3L1 7l4 4M1 7h6a3 3 0 013 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </ActionBtn>
           <ActionBtn onClick={handleReplyAll} title="Reply All (a)">
             <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M5 3L1 7l4 4M1 7h7M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </ActionBtn>
           <ActionBtn onClick={handleForward} title="Forward (f)">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M9 3l4 4-4 4M13 7H5a4 4 0 000 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M9 3l4 4-4 4M13 7H7a3 3 0 00-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </ActionBtn>
           <ActionBtn onClick={handleMarkUnread} title="Mark as unread (u)">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.3"/><circle cx="7" cy="7" r="2.5" fill="currentColor"/></svg>
+            <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="10" height="8" rx="1" stroke="currentColor" strokeWidth="1.3"/><path d="M1 6l5 3.5 5-3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><circle cx="14" cy="3" r="2.5" fill="currentColor"/></svg>
           </ActionBtn>
           <div className="relative">
             <ActionBtn onClick={() => setShowMoveMenu(v => !v)} title="Move to folder">
