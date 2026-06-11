@@ -215,7 +215,7 @@ export function MessageList({ folder, activeUid, onSelect }) {
           </button>
         </div>
         <button onClick={refresh} className="p-1.5 text-zinc-500 hover:text-zinc-300 transition-colors rounded" title="Refresh">
-          <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M13 2A6 6 0 1 0 13 11M13 2v4M13 2H9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M11 2A6 6 0 1 0 11 11M11 2v4M11 2H7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
       </div>
       <div className="px-3 py-2 border-b border-zinc-800/40">
