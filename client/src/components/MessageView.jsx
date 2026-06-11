@@ -346,9 +346,26 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
                 <button onClick={() => setShowImages(true)} className="text-violet-400 hover:text-violet-300 font-medium transition-colors">Show images</button>
               </div>
             )}
-            <iframe srcDoc={displayHtml} sandbox="" referrerPolicy="no-referrer"
-              className="w-full border-0 bg-white rounded-lg" style={{ minHeight: 400 }} title="Email content"
-              onLoad={e => { const d = e.target.contentDocument; if (d) e.target.style.height = d.documentElement.scrollHeight + 'px' }} />
+            <iframe
+              srcDoc={displayHtml}
+              sandbox="allow-same-origin"
+              referrerPolicy="no-referrer"
+              className="w-full border-0 bg-white rounded-lg"
+              style={{ minHeight: 400 }}
+              title="Email content"
+              onLoad={e => {
+                const frame = e.target
+                const measure = () => {
+                  try {
+                    const h = frame.contentDocument?.documentElement?.scrollHeight
+                    if (h > 0) frame.style.height = h + 'px'
+                  } catch (_) {}
+                }
+                measure()
+                setTimeout(measure, 300)
+                setTimeout(measure, 1200)
+              }}
+            />
           </>
         ) : (
           <pre className="text-sm text-zinc-300 whitespace-pre-wrap font-sans leading-relaxed">{message.text}</pre>
