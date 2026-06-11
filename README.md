@@ -34,16 +34,16 @@ Browser  ←──HTTPS──→  Express (server.js)  ←──IMAP/SMTP──�
 
 ## Screenshots
 
-| Login | Inbox (dark) | Inbox (light) |
-|-------|-------------|---------------|
+| Login (show/hide password) | Inbox — dark mode | Inbox — light mode |
+|---------------------------|-------------------|--------------------|
 | ![Login](screenshots/01-login.png) | ![Inbox dark](screenshots/02-inbox.png) | ![Inbox light](screenshots/03-inbox-light.png) |
 
-| Message view | Compose | Global search |
-|-------------|---------|---------------|
+| Message view | Compose (0w counter) | Global search |
+|-------------|----------------------|---------------|
 | ![Message](screenshots/04-message-view.png) | ![Compose](screenshots/05-compose.png) | ![Search](screenshots/06-global-search.png) |
 
-| Settings → Labels | Settings → Templates |
-|------------------|---------------------|
+| Settings → Labels (color ring) | Settings → Templates |
+|-------------------------------|---------------------|
 | ![Labels](screenshots/07-settings-labels.png) | ![Templates](screenshots/08-settings-templates.png) |
 
 ---
