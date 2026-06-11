@@ -56,8 +56,22 @@ function inputCls(extra = '') {
   return `w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors ${extra}`
 }
 
-function selectCls(extra = '') {
-  return `bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-violet-500 transition-colors ${extra}`
+function StyledSelect({ className = '', children, ...props }) {
+  return (
+    <div className={`relative ${className}`}>
+      <select
+        className="w-full appearance-none pr-8 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-violet-500 transition-colors cursor-pointer"
+        {...props}
+      >
+        {children}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
+        <svg className="w-3 h-3 text-zinc-500" viewBox="0 0 12 12" fill="none">
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  )
 }
 
 // ─── Accounts Tab ────────────────────────────────────────────────────────────
@@ -448,24 +462,22 @@ function RulesTab({ mail }) {
 
         {/* Condition row */}
         <div className="flex gap-2">
-          <select
+          <StyledSelect
             value={form.condField}
             onChange={e => setField('condField', e.target.value)}
-            className={selectCls()}
           >
             {RULE_FIELDS.map(f => (
               <option key={f} value={f}>{f}</option>
             ))}
-          </select>
-          <select
+          </StyledSelect>
+          <StyledSelect
             value={form.condOp}
             onChange={e => setField('condOp', e.target.value)}
-            className={selectCls()}
           >
             {RULE_OPERATORS.map(op => (
               <option key={op} value={op}>{op}</option>
             ))}
-          </select>
+          </StyledSelect>
           <input
             type="text"
             value={form.condValue}
@@ -477,15 +489,14 @@ function RulesTab({ mail }) {
 
         {/* Action row */}
         <div className="flex gap-2">
-          <select
+          <StyledSelect
             value={form.actionType}
             onChange={e => setField('actionType', e.target.value)}
-            className={selectCls()}
           >
             {RULE_ACTIONS.map(a => (
               <option key={a} value={a}>{a}</option>
             ))}
-          </select>
+          </StyledSelect>
           {form.actionType === 'move' && (
             <input
               type="text"
@@ -496,15 +507,15 @@ function RulesTab({ mail }) {
             />
           )}
           {form.actionType === 'flag' && (
-            <select
+            <StyledSelect
+              className="flex-1"
               value={form.actionFlag}
               onChange={e => setField('actionFlag', e.target.value)}
-              className={selectCls('flex-1')}
             >
               {RULE_FLAGS.map(f => (
                 <option key={f} value={f}>{f}</option>
               ))}
-            </select>
+            </StyledSelect>
           )}
         </div>
 
@@ -586,7 +597,7 @@ export function Settings({ onClose, mail }) {
                     value={displayName}
                     onChange={e => setDisplayName(e.target.value)}
                     placeholder="Your Name"
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-violet-500 transition-colors"
+                    className={inputCls()}
                   />
                   <p className="mt-1.5 text-xs text-zinc-500">Shown in the From field when sending mail</p>
                 </div>

@@ -122,6 +122,7 @@ async function getImap(sid, user, pass) {
     logger: false,
   });
   client.on('close', () => { pool.delete(sid); poolLastUsed.delete(sid); });
+  client.on('error', () => { pool.delete(sid); poolLastUsed.delete(sid); });
   await client.connect();
   pool.set(sid, client);
   poolLastUsed.set(sid, Date.now());
@@ -811,6 +812,16 @@ app.post('/api/draft', requireAuth, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── Global error guards (prevent crash on unhandled async errors) ─────────────
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err.message);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err?.message || err);
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
