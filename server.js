@@ -143,6 +143,7 @@ function getCreds(req) {
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, max: 10,
   standardHeaders: true, legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: { error: 'Too many login attempts, try again later' },
 });
 

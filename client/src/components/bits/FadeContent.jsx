@@ -1,16 +1,25 @@
-import { motion } from 'motion/react'
+import { useState, useEffect } from 'react'
 
-export default function FadeContent({ children, className = '', style, duration = 200, blur = false, ...props }) {
+export default function FadeContent({ children, className = '', style, duration = 200, blur = false }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   return (
-    <motion.div
-      initial={{ opacity: 0, filter: blur ? 'blur(8px)' : 'blur(0px)', y: 3 }}
-      animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-      transition={{ duration: duration / 1000, ease: 'easeOut' }}
+    <div
       className={className}
-      style={style}
-      {...props}
+      style={{
+        ...style,
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(3px)',
+        transition: `opacity ${duration}ms ease, transform ${duration}ms ease`,
+        ...(blur ? { filter: visible ? 'blur(0)' : 'blur(8px)' } : {}),
+      }}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }
