@@ -100,13 +100,13 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDr
         <span className="text-xs text-zinc-400 flex-1 truncate">Delete "{label}"?</span>
         <button
           onClick={handleDeleteConfirm}
-          className="text-[10px] font-medium text-red-400 hover:text-red-300 transition-colors px-1"
+          className="text-xs font-medium text-red-400 hover:text-red-300 transition-colors px-1"
         >
           Yes
         </button>
         <button
           onClick={() => setConfirmDelete(false)}
-          className="text-[10px] font-medium text-zinc-500 hover:text-zinc-300 transition-colors px-1"
+          className="text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors px-1"
         >
           No
         </button>
@@ -137,7 +137,7 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDr
         <span className={active ? 'text-violet-400' : 'text-zinc-500'}>{icon}</span>
         <span className="truncate flex-1">{label}</span>
         {folder.unseen > 0 && (
-          <span className="bg-violet-600 text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+          <span className="bg-violet-600 text-white text-xs font-semibold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
             {folder.unseen > 99 ? '99+' : <CountUp key={folder.unseen} from={0} to={folder.unseen} duration={0.6} />}
           </span>
         )}
@@ -339,7 +339,7 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
       </div>
 
       <div className="flex items-center justify-between px-3 pt-2.5 pb-1">
-        <span className="text-[10px] font-semibold text-zinc-600 uppercase tracking-wider">Folders</span>
+        <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wider">Folders</span>
         <button
           onClick={() => setCreatingFolder(true)}
           title="New folder"

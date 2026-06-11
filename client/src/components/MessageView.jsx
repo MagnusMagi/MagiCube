@@ -390,7 +390,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
             />
           </>
         ) : (
-          <pre className="text-sm text-zinc-300 whitespace-pre-wrap font-sans leading-relaxed">{message.text}</pre>
+          <pre className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{message.text}</pre>
         )}
 
         {message.attachments?.length > 0 && (

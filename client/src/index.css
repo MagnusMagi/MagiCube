@@ -5,9 +5,11 @@
   html, body, #root { height: 100%; margin: 0; }
   html { color-scheme: dark; transition: background-color 0.2s ease, color 0.2s ease; }
   body {
-    font-family: 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
+  pre { font-family: inherit; line-height: inherit; }
   input, button, textarea, select { font: inherit; }
 }
 
