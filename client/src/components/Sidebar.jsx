@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useFolders } from '../hooks/useMail'
 import { mail } from '../api/mail'
 import ShinyText from './bits/ShinyText'
@@ -6,14 +6,14 @@ import ClickSpark from './bits/ClickSpark'
 import CountUp from './bits/CountUp'
 
 const FOLDER_ICONS = {
-  INBOX: <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none"><path d="M2 5l6 4 6-4M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  Inbox: <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none"><path d="M2 5l6 4 6-4M2 3h12a1 1 0 011 1v8a1 1 0 01-1 1H2a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   Sent: <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none"><path d="M14 2L2 7l5 2 2 5 5-12z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   Drafts: <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none"><path d="M11 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V5l-2-3z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/><path d="M11 2v3h3M6 9h4M6 12h2" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round"/></svg>,
   Trash: <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none"><path d="M13 4H3M6 4V3h4v1M5 4v8a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   Spam: <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.25"/><path d="M8 5v3M8 10.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
 }
 
-const SYSTEM_FOLDERS = ['INBOX', 'Sent', 'Drafts', 'Trash', 'Spam', 'Junk']
+const SYSTEM_FOLDERS = ['Inbox', 'Sent', 'Drafts', 'Trash', 'Spam', 'Junk']
 const EMPTIED_LABELS = ['trash', 'spam', 'junk', 'deleted']
 
 function folderLabel(path) {
@@ -25,9 +25,9 @@ function isSystemFolder(label) {
   return SYSTEM_FOLDERS.includes(label)
 }
 
-function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete }) {
+function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete, onDragStart, onDragOver, onDrop, onDragEnd, isDragOver }) {
   const label = folderLabel(folder.path)
-  const icon = FOLDER_ICONS[label] || FOLDER_ICONS.INBOX
+  const icon = FOLDER_ICONS[label] || FOLDER_ICONS.Inbox
   const canEmpty = EMPTIED_LABELS.some(k => label.toLowerCase().includes(k))
   const isSystem = isSystemFolder(label)
 
@@ -115,10 +115,24 @@ function FolderItem({ folder, active, onClick, onEmpty, onRename, onDelete }) {
   }
 
   return (
-    <div className="group flex items-center gap-1">
+    <div
+      className={`group flex items-center gap-1 rounded-lg ${isDragOver ? 'ring-1 ring-violet-500/40 bg-violet-500/5' : ''}`}
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+    >
+      <div className="opacity-0 group-hover:opacity-100 cursor-grab pl-1 shrink-0 text-zinc-700 hover:text-zinc-500 transition-colors">
+        <svg className="w-2.5 h-3.5" viewBox="0 0 6 10" fill="currentColor">
+          <circle cx="1.5" cy="1.5" r="1"/><circle cx="4.5" cy="1.5" r="1"/>
+          <circle cx="1.5" cy="5" r="1"/><circle cx="4.5" cy="5" r="1"/>
+          <circle cx="1.5" cy="8.5" r="1"/><circle cx="4.5" cy="8.5" r="1"/>
+        </svg>
+      </div>
       <button
         onClick={() => onClick(folder.path)}
-        className={`flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors text-left ${active ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
+        className={`flex-1 flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-colors text-left ${active ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}
       >
         <span className={active ? 'text-violet-400' : 'text-zinc-500'}>{icon}</span>
         <span className="truncate flex-1">{label}</span>
@@ -216,14 +230,40 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
   const [creatingFolder, setCreatingFolder] = useState(false)
   const sseRetryRef = useRef(null)
 
-  const topOrder = ['INBOX', 'Sent', 'Drafts']
-  const bottomOrder = ['Trash', 'Spam', 'Junk']
+  const [folderOrder, setFolderOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('magicube:folderOrder') || 'null') } catch { return null }
+  })
+  const [dragOverPath, setDragOverPath] = useState(null)
 
-  const sorted = [
-    ...topOrder.map(n => folders.find(f => folderLabel(f.path) === n)).filter(Boolean),
-    ...folders.filter(f => !topOrder.includes(folderLabel(f.path)) && !bottomOrder.includes(folderLabel(f.path))),
-    ...bottomOrder.map(n => folders.find(f => folderLabel(f.path) === n)).filter(Boolean),
-  ]
+  const DEFAULT_TOP = ['Inbox', 'Sent', 'Drafts']
+  const DEFAULT_BOTTOM = ['Trash', 'Spam', 'Junk']
+
+  const sorted = useMemo(() => {
+    if (folderOrder) {
+      const byPath = new Map(folders.map(f => [f.path, f]))
+      const ordered = folderOrder.map(p => byPath.get(p)).filter(Boolean)
+      const remaining = folders.filter(f => !folderOrder.includes(f.path))
+      return [...ordered, ...remaining]
+    }
+    return [
+      ...DEFAULT_TOP.map(n => folders.find(f => folderLabel(f.path) === n)).filter(Boolean),
+      ...folders.filter(f => !DEFAULT_TOP.includes(folderLabel(f.path)) && !DEFAULT_BOTTOM.includes(folderLabel(f.path))),
+      ...DEFAULT_BOTTOM.map(n => folders.find(f => folderLabel(f.path) === n)).filter(Boolean),
+    ]
+  }, [folders, folderOrder])
+
+  function handleReorder(fromPath, toPath) {
+    if (fromPath === toPath) return
+    const paths = sorted.map(f => f.path)
+    const fromIdx = paths.indexOf(fromPath)
+    const toIdx = paths.indexOf(toPath)
+    if (fromIdx === -1 || toIdx === -1) return
+    const next = [...paths]
+    next.splice(fromIdx, 1)
+    next.splice(toIdx, 0, fromPath)
+    setFolderOrder(next)
+    localStorage.setItem('magicube:folderOrder', JSON.stringify(next))
+  }
 
   const connectSSE = useCallback(() => {
     const es = new EventSource('/api/sse')
@@ -325,6 +365,11 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
             onEmpty={handleEmpty}
             onRename={handleRenameFolder}
             onDelete={handleDeleteFolder}
+            isDragOver={dragOverPath === f.path}
+            onDragStart={e => e.dataTransfer.setData('text/plain', f.path)}
+            onDragOver={e => { e.preventDefault(); setDragOverPath(f.path) }}
+            onDrop={e => { e.preventDefault(); handleReorder(e.dataTransfer.getData('text/plain'), f.path); setDragOverPath(null) }}
+            onDragEnd={() => setDragOverPath(null)}
           />
         ))}
       </nav>
