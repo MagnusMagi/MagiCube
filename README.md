@@ -514,6 +514,44 @@ cd client && npm run dev
 
 ## Changelog
 
+### v1.2.0
+
+**Accessibility**
+- `aria-live="polite"` on toast container — screen readers now announce notifications
+- `aria-pressed` on All/Threads toggle, Settings tabs, and Toggle switches
+- `role="textbox"`, `aria-label`, `aria-multiline` on Compose rich-text editor
+- `aria-label` on all icon-only action buttons (Reply, Forward, Star, Delete, etc.)
+- `aria-label` on mobile back navigation buttons
+
+**Visual fixes**
+- Fixed invalid Tailwind utility `bg-linear-to-b/r` → `bg-gradient-to-b/r` in MessageList, Settings, Sidebar
+- Unread messages now show a violet left-border stripe for clear visual distinction
+- HTML email iframe renders with `colorScheme: light` — no more white body in dark theme
+
+**Login UX**
+- Show/hide password toggle with eye icon
+- Card positioned upper-center on mobile (eliminates dead whitespace)
+- Proper `htmlFor` label associations
+
+**Compose**
+- Word counter always visible (`0w` when empty)
+- Editor placeholder bumped from zinc-600 → zinc-500 for better legibility
+- Priority and read-receipt buttons have descriptive `aria-label` and `aria-pressed`
+
+**Settings**
+- Mobile tab nav has fade-mask scroll affordance
+- Selected label color swatch now shows a violet ring instead of translucent white
+
+**Error handling**
+- Folder operations (empty, rename, delete, create) now surface errors as an inline alert instead of silently swallowing them
+
+**Performance**
+- CSS theme transition scoped to interactive/themed elements instead of `*` (reduces repaint scope)
+- `prefers-reduced-motion` media query disables all animations for users who prefer it
+
+**Message list**
+- Date cells show full locale timestamp on hover via `title` attribute
+
 ### v1.1.0
 
 - Real-time IMAP IDLE push notifications via SSE
