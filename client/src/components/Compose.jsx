@@ -557,7 +557,7 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
             data-placeholder="Write your message…"
             className={[
               'flex-1 overflow-y-auto px-5 py-4 text-sm text-zinc-300 focus:outline-none min-h-[160px]',
-              '[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-zinc-600 [&:empty]:before:pointer-events-none',
+              '[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-zinc-500 [&:empty]:before:pointer-events-none',
               '[&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-zinc-100 [&_h1]:my-2',
               '[&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-zinc-100 [&_h2]:my-1.5',
               '[&_pre]:bg-zinc-800 [&_pre]:rounded [&_pre]:px-3 [&_pre]:py-2 [&_pre]:text-xs [&_pre]:font-mono [&_pre]:my-2',
@@ -674,9 +674,9 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           {/* Auto-save / word count */}
           {autoSaveStatus ? (
             <span className="text-xs text-zinc-500 shrink-0">{autoSaveStatus}</span>
-          ) : wordCount > 0 ? (
+          ) : (
             <span className="text-xs text-zinc-600 tabular-nums shrink-0">{wordCount}w</span>
-          ) : null}
+          )}
 
           {/* Attach file */}
           <button onClick={() => fileRef.current?.click()}

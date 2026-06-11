@@ -215,7 +215,7 @@ export default function App() {
           <div ref={listRef} className="absolute inset-0 flex flex-col lg:relative lg:inset-auto lg:flex-none">
             {/* Back button: mobile only — tablet has sidebar visible */}
             <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
-              <button onClick={() => setMobilePanel('sidebar')}
+              <button onClick={() => setMobilePanel('sidebar')} aria-label="Back to folders"
                 className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
                 <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
                   <path d="M12 15L7 10l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -232,7 +232,7 @@ export default function App() {
           <div ref={messageRef} className="absolute inset-0 flex flex-col lg:relative lg:inset-auto lg:flex-1">
             {/* Back button: mobile + tablet — go back to list */}
             <div className="lg:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
-              <button onClick={() => setMobilePanel('list')}
+              <button onClick={() => setMobilePanel('list')} aria-label="Back to message list"
                 className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
                 <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
                   <path d="M12 15L7 10l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>

@@ -49,7 +49,7 @@ function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented 
       <button onClick={() => onSelect(msg.uid)} className="flex-1 text-left px-3 py-3.5 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-1">
           <span className={`text-sm truncate ${msg.read ? 'text-zinc-400' : 'text-zinc-100 font-medium'}`}>{msg.from.name || msg.from.address}</span>
-          <span className="text-xs text-zinc-500 shrink-0">{formatDate(msg.date)}</span>
+          <span className="text-xs text-zinc-500 shrink-0" title={msg.date ? new Date(msg.date).toLocaleString() : ''}>{formatDate(msg.date)}</span>
         </div>
         <div className={`text-xs truncate ${msg.read ? 'text-zinc-500' : 'text-zinc-300'}`}>{msg.subject}</div>
       </button>

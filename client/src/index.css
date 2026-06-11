@@ -59,9 +59,20 @@ html.light {
   --color-violet-300: oklch(66% .18 260);
 }
 
-/* Theme transition animation */
-*, *::before, *::after {
+/* Theme transition — scoped to interactive and themed elements */
+button, a, input, textarea, select,
+aside, nav, header, footer, main,
+[class*="bg-zinc-"], [class*="border-zinc-"], [class*="text-zinc-"] {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Print view */

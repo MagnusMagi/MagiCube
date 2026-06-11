@@ -617,8 +617,8 @@ function LabelsTab() {
       <div className="flex items-center gap-2 pt-2 border-t border-zinc-800">
         <div className="flex gap-1">
           {LABEL_COLORS.map(c => (
-            <button key={c} onClick={() => setNewColor(c)}
-              className={`w-4 h-4 rounded-full transition-transform ${newColor === c ? 'scale-125 ring-2 ring-white/30' : ''}`}
+            <button key={c} onClick={() => setNewColor(c)} aria-label={c} aria-pressed={newColor === c}
+              className={`w-4 h-4 rounded-full transition-transform ${newColor === c ? 'scale-125 ring-2 ring-violet-400' : 'hover:scale-110'}`}
               style={{ background: c }} />
           ))}
         </div>
@@ -722,7 +722,7 @@ export function Settings({ onClose, mail: _mailProp }) {
         {/* Body */}
         <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
           {/* Nav — horizontal scroll on mobile, vertical on desktop */}
-          <nav className="shrink-0 lg:w-36 flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-visible border-b lg:border-b-0 lg:border-r border-zinc-800 px-2 py-1.5 lg:p-2">
+          <nav className="shrink-0 lg:w-36 flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-visible border-b lg:border-b-0 lg:border-r border-zinc-800 px-2 py-1.5 lg:p-2 [mask-image:linear-gradient(to_right,transparent_0,black_8px,black_calc(100%-24px),transparent_100%)] lg:[mask-image:none]">
             {TABS.map(t => (
               <button key={t} onClick={() => setTab(t)}
                 aria-pressed={tab === t}
