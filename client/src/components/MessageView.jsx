@@ -259,7 +259,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
   const needsImageWarning = message.html && hasExternalImages(message.html)
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {confirmDelete && (
         <div className="bg-zinc-800 border-b border-zinc-700 px-6 py-3 flex items-center gap-3">
           <span className="text-sm text-zinc-300 flex-1">Delete this message permanently?</span>

@@ -14,8 +14,7 @@ export default function FadeContent({ children, className = '', style, duration 
       style={{
         ...style,
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(3px)',
-        transition: `opacity ${duration}ms ease, transform ${duration}ms ease`,
+        transition: `opacity ${duration}ms ease`,
         ...(blur ? { filter: visible ? 'blur(0)' : 'blur(8px)' } : {}),
       }}
     >
