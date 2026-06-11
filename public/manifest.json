@@ -1,0 +1,13 @@
+{
+  "name": "MagiCube",
+  "short_name": "MagiCube",
+  "description": "Webmail client",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait-primary"
+}

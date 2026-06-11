@@ -8,6 +8,7 @@
     font-family: 'Nunito', system-ui, -apple-system, sans-serif;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    background-color: #09090b; /* L1: prevent white flash on iOS before paint */
   }
   pre { font-family: inherit; line-height: inherit; }
   input, button, textarea, select { font: inherit; }
@@ -21,6 +22,10 @@
     font-size: max(1rem, 16px) !important;
   }
 }
+
+/* M1: iOS Safari -webkit-backdrop-filter prefix */
+.backdrop-blur-sm { -webkit-backdrop-filter: blur(4px); }
+.backdrop-blur-xl { -webkit-backdrop-filter: blur(24px); }
 
 /* Themed scrollbars */
 * {

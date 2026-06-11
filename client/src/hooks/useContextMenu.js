@@ -6,7 +6,11 @@ export function useContextMenu() {
   const openMenu = useCallback((e, items) => {
     e.preventDefault()
     e.stopPropagation()
-    setMenu({ open: true, x: e.clientX, y: e.clientY, items })
+    // L4: extract coordinates from touch events on iOS
+    const touch = e.changedTouches?.[0] ?? e.touches?.[0]
+    const x = touch ? touch.clientX : e.clientX
+    const y = touch ? touch.clientY : e.clientY
+    setMenu({ open: true, x, y, items })
   }, [])
 
   const closeMenu = useCallback(() => {

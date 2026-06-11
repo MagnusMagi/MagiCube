@@ -358,7 +358,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto p-3 lg:p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 lg:p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
         {showSource ? (
           <pre className="text-xs text-zinc-400 whitespace-pre-wrap font-mono leading-relaxed bg-zinc-900 rounded p-4 overflow-x-auto">
             {rawSource}
@@ -371,26 +371,29 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
                 <button onClick={() => setShowImages(true)} className="text-violet-400 hover:text-violet-300 font-medium transition-colors">Show images</button>
               </div>
             )}
-            <iframe
-              srcDoc={displayHtml}
-              sandbox="allow-same-origin"
-              referrerPolicy="no-referrer"
-              className="w-full border-0 rounded-lg ring-1 ring-zinc-700/50"
-              style={{ minHeight: 400, colorScheme: 'light' }}
-              title="Email content"
-              onLoad={e => {
-                const frame = e.target
-                const measure = () => {
-                  try {
-                    const h = frame.contentDocument?.documentElement?.scrollHeight
-                    if (h > 0) frame.style.height = h + 'px'
-                  } catch (_) {}
-                }
-                measure()
-                setTimeout(measure, 300)
-                setTimeout(measure, 1200)
-              }}
-            />
+            {/* C1: wrap in scrollable div for iOS Safari iframe scroll support */}
+            <div style={{ overflow: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
+              <iframe
+                srcDoc={displayHtml}
+                sandbox="allow-same-origin"
+                referrerPolicy="no-referrer"
+                className="w-full border-0 rounded-lg ring-1 ring-zinc-700/50"
+                style={{ minHeight: 400, colorScheme: 'light' }}
+                title="Email content"
+                onLoad={e => {
+                  const frame = e.target
+                  const measure = () => {
+                    try {
+                      const h = frame.contentDocument?.documentElement?.scrollHeight
+                      if (h > 0) frame.style.height = h + 'px'
+                    } catch (_) {}
+                  }
+                  measure()
+                  setTimeout(measure, 300)
+                  setTimeout(measure, 1200)
+                }}
+              />
+            </div>
           </>
         ) : (
           <pre className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{message.text}</pre>

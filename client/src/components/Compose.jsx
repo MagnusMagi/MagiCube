@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { mail } from '../api/mail'
 
 const UNDO_SECONDS = 10
@@ -54,8 +55,14 @@ function countWords(text) {
 function AddressInput({ value, onChange, placeholder }) {
   const [suggestions, setSuggestions] = useState([])
   const [open, setOpen] = useState(false)
+  const [dropdownStyle, setDropdownStyle] = useState({})
   const contacts = useRef(loadContacts())
   const wrapperRef = useRef(null)
+
+  function updateDropdownPos() {
+    const rect = wrapperRef.current?.getBoundingClientRect()
+    if (rect) setDropdownStyle({ position: 'fixed', top: rect.bottom + 4, left: rect.left, width: Math.max(288, rect.width), zIndex: 10000 })
+  }
 
   function handleChange(e) {
     onChange(e.target.value)
@@ -65,6 +72,7 @@ function AddressInput({ value, onChange, placeholder }) {
         .filter(c => c.name.toLowerCase().includes(token.toLowerCase()) || c.address.toLowerCase().includes(token.toLowerCase()))
         .slice(0, 5)
       setSuggestions(filtered)
+      if (filtered.length > 0) updateDropdownPos()
       setOpen(filtered.length > 0)
     } else {
       setSuggestions([])
@@ -81,11 +89,12 @@ function AddressInput({ value, onChange, placeholder }) {
   }
 
   useEffect(() => {
-    function onClick(e) {
+    function onDown(e) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false)
     }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
+    // M4: pointerdown works on touch too; dropdown portalled to body to escape overflow-hidden
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
   }, [])
 
   return (
@@ -96,8 +105,8 @@ function AddressInput({ value, onChange, placeholder }) {
         placeholder={placeholder} spellCheck="true"
         className="w-full bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none"
       />
-      {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 w-72 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden">
+      {open && createPortal(
+        <div style={dropdownStyle} className="bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden">
           {suggestions.map((c, i) => (
             <button key={i} type="button" onMouseDown={e => { e.preventDefault(); handleSelect(c) }}
               className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex flex-col">
@@ -105,7 +114,8 @@ function AddressInput({ value, onChange, placeholder }) {
               <span className="text-zinc-500 text-xs">{c.address}</span>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
@@ -113,7 +123,10 @@ function AddressInput({ value, onChange, placeholder }) {
 
 function ToolbarButton({ onMouseDown, title, children }) {
   return (
-    <button type="button" onMouseDown={onMouseDown} title={title}
+    <button type="button"
+      onMouseDown={onMouseDown}
+      onTouchEnd={e => onMouseDown?.(e)}  // C2: fire on touch too (iOS doesn't reliably fire mousedown)
+      title={title}
       className="px-2 py-1 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded transition-colors font-medium select-none">
       {children}
     </button>
@@ -151,37 +164,78 @@ function ColorPicker({ onSelect }) {
 function RichToolbar({ editorRef }) {
   const [showEmoji, setShowEmoji] = useState(false)
   const [showColor, setShowColor] = useState(false)
+  const [showLinkInput, setShowLinkInput] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+  const savedRangeRef = useRef(null)
 
+  // C2: wrap execCommand in try/catch — unreliable on iOS 17+
   function exec(cmd, val) {
     return e => {
       e.preventDefault()
       editorRef.current?.focus()
-      document.execCommand(cmd, false, val ?? null)
+      try { document.execCommand(cmd, false, val ?? null) } catch (_) {}
     }
   }
 
+  // L3: inline link input instead of window.prompt (blocked on iOS)
   function handleLink(e) {
     e.preventDefault()
-    editorRef.current?.focus()
-    const url = window.prompt('Enter URL:', 'https://')
-    if (url) document.execCommand('createLink', false, url)
+    const sel = window.getSelection()
+    if (sel?.rangeCount > 0) savedRangeRef.current = sel.getRangeAt(0).cloneRange()
+    setLinkUrl('https://')
+    setShowLinkInput(true)
+  }
+
+  function commitLink() {
+    if (linkUrl) {
+      editorRef.current?.focus()
+      const sel = window.getSelection()
+      if (savedRangeRef.current) { sel?.removeAllRanges(); sel?.addRange(savedRangeRef.current) }
+      try { document.execCommand('createLink', false, linkUrl) } catch (_) {}
+    }
+    setShowLinkInput(false)
+    setLinkUrl('')
+    savedRangeRef.current = null
   }
 
   function handleColor(value) {
     editorRef.current?.focus()
-    if (value) document.execCommand('foreColor', false, value)
-    else document.execCommand('removeFormat', false, null)
+    try {
+      if (value) document.execCommand('foreColor', false, value)
+      else document.execCommand('removeFormat', false, null)
+    } catch (_) {}
     setShowColor(false)
   }
 
   function insertEmoji(emoji) {
     editorRef.current?.focus()
-    document.execCommand('insertText', false, emoji)
+    try { document.execCommand('insertText', false, emoji) } catch (_) {}
     setShowEmoji(false)
   }
 
   return (
-    <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-zinc-800/70 bg-zinc-800/20 flex-wrap">
+    <>
+      {showLinkInput && (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-700 bg-zinc-800/50">
+          <input
+            type="url"
+            value={linkUrl}
+            onChange={e => setLinkUrl(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { e.preventDefault(); commitLink() }
+              if (e.key === 'Escape') { setShowLinkInput(false); setLinkUrl('') }
+            }}
+            autoFocus
+            placeholder="https://"
+            className="flex-1 bg-transparent text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none"
+          />
+          <button type="button" onMouseDown={e => { e.preventDefault(); commitLink() }} onTouchEnd={e => { e.preventDefault(); commitLink() }}
+            className="text-xs text-violet-400 hover:text-violet-300 px-2">Insert</button>
+          <button type="button" onMouseDown={e => { e.preventDefault(); setShowLinkInput(false); setLinkUrl('') }} onTouchEnd={e => { e.preventDefault(); setShowLinkInput(false); setLinkUrl('') }}
+            className="text-xs text-zinc-500 hover:text-zinc-300">Cancel</button>
+        </div>
+      )}
+      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-zinc-800/70 bg-zinc-800/20 flex-wrap">
       <ToolbarButton onMouseDown={exec('bold')} title="Bold (Ctrl+B)"><strong>B</strong></ToolbarButton>
       <ToolbarButton onMouseDown={exec('italic')} title="Italic (Ctrl+I)"><em>I</em></ToolbarButton>
       <ToolbarButton onMouseDown={exec('underline')} title="Underline (Ctrl+U)"><span className="underline">U</span></ToolbarButton>
@@ -229,6 +283,7 @@ function RichToolbar({ editorRef }) {
         {showEmoji && <EmojiPicker onSelect={insertEmoji} />}
       </div>
     </div>
+    </>
   )
 }
 
@@ -334,7 +389,7 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
         const file = item.getAsFile()
         const reader = new FileReader()
         reader.onload = ev => {
-          document.execCommand('insertHTML', false, `<img src="${ev.target.result}" style="max-width:100%" />`)
+          try { document.execCommand('insertHTML', false, `<img src="${ev.target.result}" style="max-width:100%" />`) } catch (_) {}
         }
         reader.readAsDataURL(file)
         return
@@ -624,7 +679,7 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
         )}
 
         {/* Footer */}
-        <div className="flex items-center gap-2 px-5 py-3.5 border-t border-zinc-800">
+        <div className={`flex items-center gap-2 px-5 border-t border-zinc-800 ${isMobile ? 'pt-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))]' : 'py-3.5'}`}>
           <div className="flex items-stretch relative shrink-0">
             <button onClick={handleSend} disabled={sending || !!undoState}
               className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-l-lg transition-colors"
@@ -690,7 +745,7 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           {/* Attach file */}
           <button onClick={() => fileRef.current?.click()}
             className="p-1.5 text-zinc-500 hover:text-zinc-300 transition-colors rounded shrink-0"
-            title="Attach file (or drag & drop)">
+            title={isMobile ? 'Attach file' : 'Attach file (or drag & drop)'}>
             <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
               <path d="M13.5 8l-5.5 5.5a4 4 0 01-5.657-5.657l6-6a2.5 2.5 0 013.535 3.535L6 11.243a1 1 0 01-1.414-1.414L10 4.414" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
             </svg>

@@ -21,7 +21,7 @@ export function Login({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-start justify-center pt-[12vh] sm:items-center sm:pt-0 p-4">
+    <div className="min-h-dvh bg-zinc-950 flex items-start justify-center pt-[12vh] sm:items-center sm:pt-0 p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">MagiCube</h1>

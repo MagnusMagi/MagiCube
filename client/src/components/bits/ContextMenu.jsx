@@ -22,7 +22,9 @@ function MenuItem({ item, onClose }) {
     >
       <button
         type="button"
-        onClick={hasSubmenu ? undefined : () => { item.onClick?.(); onClose() }}
+        onClick={hasSubmenu
+          ? () => setSubmenuOpen(v => !v)  // H3: tap toggles submenu on mobile
+          : () => { item.onClick?.(); onClose() }}
         disabled={item.disabled}
         className={[
           'w-full flex items-center gap-2 px-2.5 py-1.5 text-sm rounded-lg transition-colors text-left select-none',
@@ -70,7 +72,7 @@ export function ContextMenu({ open, x, y, items, onClose }) {
       if (!el) return
       const { width, height } = el.getBoundingClientRect()
       const vw = window.innerWidth
-      const vh = window.innerHeight
+      const vh = window.visualViewport?.height ?? window.innerHeight  // M2: visual viewport for iOS
       setPos({
         x: x + width > vw - 8 ? Math.max(8, x - width) : x,
         y: y + height > vh - 8 ? Math.max(8, y - height) : y,
@@ -83,10 +85,10 @@ export function ContextMenu({ open, x, y, items, onClose }) {
     if (!open) return
     const onDown = (e) => { if (!ref.current?.contains(e.target)) onClose() }
     const onScroll = () => onClose()
-    document.addEventListener('mousedown', onDown)
+    document.addEventListener('pointerdown', onDown)  // H3: pointerdown fires on iOS touch
     document.addEventListener('scroll', onScroll, true)
     return () => {
-      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('pointerdown', onDown)
       document.removeEventListener('scroll', onScroll, true)
     }
   }, [open, onClose])

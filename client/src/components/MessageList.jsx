@@ -42,7 +42,7 @@ function groupIntoThreads(messages) {
 }
 
 function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented, onContextMenu, onSwipeDelete, onSwipeToggleRead }) {
-  const { contentRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipe({
+  const { contentRef, onTouchStart, onTouchEnd } = useSwipe({
     onSwipeLeft:  onSwipeDelete,
     onSwipeRight: onSwipeToggleRead,
   })
@@ -68,7 +68,6 @@ function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented,
         ref={contentRef}
         style={{ touchAction: 'pan-y' }}
         onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
         <SpotlightCard
@@ -76,7 +75,8 @@ function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented,
           className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-400' : !msg.read && !indented ? 'border-l-2 border-l-violet-500' : 'border-l-2 border-l-transparent'} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}
           onContextMenu={e => onContextMenu?.(e, msg)}
         >
-          <div className={`flex items-center shrink-0 ${indented ? 'pl-6 pr-1' : 'pl-3 pr-1'}`}>
+          {/* H5: 44px touch target for checkbox */}
+          <div className={`flex items-center justify-center shrink-0 w-[44px] min-h-[44px] ${indented ? 'pl-4' : 'pl-1'}`}>
             <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
               className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
               style={{ opacity: selected ? 1 : undefined }} />
@@ -101,7 +101,8 @@ function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, 
   return (
     <div className={`border-b border-zinc-800/40 ${isAnyActive ? 'bg-zinc-700/10' : ''}`}>
       <div className={`group relative flex items-stretch transition-colors ${isAnyActive ? 'border-l-2 border-l-zinc-600' : ''} ${!expanded ? 'hover:bg-zinc-800/40' : 'bg-zinc-800/20'}`}>
-        <div className="flex items-center pl-3 pr-1 shrink-0">
+        {/* H5: 44px touch target for thread checkbox */}
+        <div className="flex items-center justify-center shrink-0 w-[44px] min-h-[44px] pl-1">
           <input
             type="checkbox"
             checked={thread.uids.every(uid => selectedUids.has(uid))}
