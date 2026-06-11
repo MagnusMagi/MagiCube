@@ -352,6 +352,9 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
           <ActionBtn onClick={handleShowSource} title="Show source">
             <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M4 3L1 7l3 4M10 3l3 4-3 4M8 2l-2 10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </ActionBtn>
+          <ActionBtn onClick={() => window.print()} title="Print">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M3 5V2h8v3M3 10H1V5h12v5h-2M3 8h8v4H3z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </ActionBtn>
         </div>
       </div>
 
@@ -395,7 +398,15 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
 
         {message.attachments?.length > 0 && (
           <div className="mt-6 pt-4 border-t border-zinc-800">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-3">Attachments</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-zinc-500 uppercase tracking-wider">Attachments</p>
+              {message.attachments.length > 1 && (
+                <a href={mail.attachmentsZipUrl(uid, folder)} download="attachments.zip"
+                  className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+                  Download all (.zip)
+                </a>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2 items-end">
               {message.attachments.map(a => (
                 <AttachmentItem key={a.index} a={a} uid={uid} folder={folder} />

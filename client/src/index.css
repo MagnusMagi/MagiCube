@@ -58,3 +58,15 @@ html.light {
   --color-violet-400: oklch(57% .22 260);
   --color-violet-300: oklch(66% .18 260);
 }
+
+/* Theme transition animation */
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+
+/* Print view */
+@media print {
+  .no-print, nav, aside, header, footer, button { display: none !important; }
+  body { background: white !important; color: black !important; }
+  .print-body { font-size: 12pt; line-height: 1.5; }
+}
