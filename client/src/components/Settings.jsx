@@ -32,10 +32,9 @@ function Toggle({ value, onChange }) {
   return (
     <button
       onClick={() => onChange(!value)}
-      style={{ width: 40, height: 22 }}
-      className={`shrink-0 relative rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${value ? 'bg-violet-600' : 'bg-zinc-700'}`}
+      className={`shrink-0 relative w-10 h-[22px] p-0 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${value ? 'bg-violet-600' : 'bg-zinc-600'}`}
     >
-      <span className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${value ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
+      <span className={`absolute top-[2px] left-0 h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${value ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
     </button>
   )
 }
