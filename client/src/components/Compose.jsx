@@ -448,7 +448,6 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
             data-placeholder="Write your message…"
             className={[
               'flex-1 overflow-y-auto px-5 py-4 text-sm text-zinc-300 focus:outline-none min-h-[160px]',
-              'prose prose-invert prose-sm max-w-none',
               '[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-zinc-600 [&:empty]:before:pointer-events-none',
             ].join(' ')}
             style={{ wordBreak: 'break-word' }}
@@ -516,7 +515,7 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
             <button
               onClick={handleSend}
               disabled={sending || !!undoState}
-              className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-l-lg transition-colors"
+              className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-l-lg transition-colors"
             >
               {sending ? 'Sending…' : 'Send'}
             </button>

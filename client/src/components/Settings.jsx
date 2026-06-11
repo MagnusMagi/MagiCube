@@ -137,7 +137,7 @@ function AccountsTab({ mail }) {
     <div className="space-y-6">
       {/* Account list */}
       <div>
-        <p className="text-xs font-medium text-zinc-400 mb-2">Configured accounts</p>
+        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Configured accounts</p>
         {accounts.length === 0 && (
           <p className="text-sm text-zinc-500 italic">No accounts found</p>
         )}
@@ -179,7 +179,7 @@ function AccountsTab({ mail }) {
 
       {/* Add account */}
       <div>
-        <p className="text-xs font-medium text-zinc-400 mb-3">Add account</p>
+        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Add account</p>
         <div className="space-y-2">
           <input
             type="email"
@@ -262,7 +262,7 @@ function VacationTab({ mail }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-zinc-400 mb-1.5">Start date</label>
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Start date</label>
           <input
             type="date"
             value={startDate}
@@ -271,7 +271,7 @@ function VacationTab({ mail }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-zinc-400 mb-1.5">End date</label>
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">End date</label>
           <input
             type="date"
             value={endDate}
@@ -282,7 +282,7 @@ function VacationTab({ mail }) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-zinc-400 mb-1.5">Subject template</label>
+        <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Subject template</label>
         <input
           type="text"
           value={subject}
@@ -294,7 +294,7 @@ function VacationTab({ mail }) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-zinc-400 mb-1.5">Message body</label>
+        <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Message body</label>
         <textarea
           value={body}
           onChange={e => setBody(e.target.value)}
@@ -419,7 +419,7 @@ function RulesTab({ mail }) {
     <div className="space-y-6">
       {/* Rule list */}
       <div>
-        <p className="text-xs font-medium text-zinc-400 mb-2">Active rules</p>
+        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-2">Active rules</p>
         {rules.length === 0 && (
           <p className="text-sm text-zinc-500 italic">No rules configured</p>
         )}
@@ -449,7 +449,7 @@ function RulesTab({ mail }) {
 
       {/* Add rule form */}
       <div className="space-y-3">
-        <p className="text-xs font-medium text-zinc-400">Add rule</p>
+        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wider">Add rule</p>
 
         <input
           type="text"
@@ -592,7 +592,7 @@ export function Settings({ onClose, mail }) {
             {tab === 'Compose' && (
               <div className="space-y-5">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Display Name</label>
+                  <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Display Name</label>
                   <input
                     type="text"
                     value={displayName}
@@ -604,7 +604,7 @@ export function Settings({ onClose, mail }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Email Signature</label>
+                  <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Email Signature</label>
                   <textarea
                     value={signature}
                     onChange={e => setSignature(e.target.value)}

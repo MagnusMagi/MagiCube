@@ -326,11 +326,11 @@ export function Sidebar({ activeFolder, onFolderSelect, user, onLogout, onCompos
   return (
     <aside className="w-full md:w-56 shrink-0 h-full bg-zinc-950 border-r border-zinc-800/60 flex flex-col">
       <div className="p-4 border-b border-zinc-800/60">
-        <ShinyText text="MagiCube" speed={4} color="#71717a" shineColor={theme === 'light' ? '#1e3a5f' : '#e4e4e7'} className="text-base font-semibold mb-3 block" />
+        <ShinyText text="MagiCube" speed={4} color="#71717a" shineColor={theme === 'light' ? '#1e3a5f' : '#e4e4e7'} className="text-base font-semibold tracking-tight mb-3 block" />
         <ClickSpark sparkColor={theme === 'light' ? '#1e3a5f' : '#a78bfa'} sparkCount={8} sparkSize={8} sparkRadius={24} duration={500}>
           <button
             onClick={onCompose}
-            className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg py-2 transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg py-2 transition-colors"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
             Compose

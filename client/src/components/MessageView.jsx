@@ -293,7 +293,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
 
       <div className="px-4 md:px-6 py-4 border-b border-zinc-800/60 flex flex-col md:flex-row md:items-start gap-2 md:gap-3">
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-semibold text-zinc-100 mb-2 leading-tight">{message.subject}</h2>
+          <h2 className="text-lg font-semibold text-zinc-100 mb-2 leading-tight tracking-tight">{message.subject}</h2>
           <div className="flex flex-wrap gap-1 text-xs text-zinc-500">
             <span className="text-zinc-400 mr-1">From:</span>
             {message.from.map((a, i) => <AddressChip key={i} addr={a} />)}
