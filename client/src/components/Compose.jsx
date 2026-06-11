@@ -546,6 +546,9 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           <div
             ref={editorRef}
             contentEditable
+            role="textbox"
+            aria-label="Message body"
+            aria-multiline="true"
             spellCheck="true"
             suppressContentEditableWarning
             dangerouslySetInnerHTML={{ __html: initialHtml }}

@@ -40,7 +40,7 @@ function groupIntoThreads(messages) {
 
 function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented }) {
   return (
-    <SpotlightCard spotlightColor={active ? 'rgba(161,161,170,0.10)' : 'rgba(161,161,170,0.05)'} className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-600' : ''} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
+    <SpotlightCard spotlightColor={active ? 'rgba(161,161,170,0.10)' : 'rgba(161,161,170,0.05)'} className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-400' : !msg.read && !indented ? 'border-l-2 border-l-violet-500' : 'border-l-2 border-l-transparent'} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
       <div className={`flex items-center shrink-0 ${indented ? 'pl-6 pr-1' : 'pl-3 pr-1'}`}>
         <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
           className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
@@ -203,13 +203,15 @@ export function MessageList({ folder, activeUid, onSelect }) {
         <div className="flex rounded-md overflow-hidden border border-zinc-700/60 shrink-0">
           <button
             onClick={() => setThreadMode(false)}
-            className={`text-xs px-2.5 py-1 transition-colors ${!threadMode ? 'bg-linear-to-b from-zinc-700 to-zinc-800 text-zinc-100' : 'text-zinc-600 hover:text-zinc-400'}`}
+            aria-pressed={!threadMode}
+            className={`text-xs px-2.5 py-1 transition-colors ${!threadMode ? 'bg-gradient-to-b from-zinc-700 to-zinc-800 text-zinc-100' : 'text-zinc-600 hover:text-zinc-400'}`}
           >
             All
           </button>
           <button
             onClick={() => setThreadMode(true)}
-            className={`text-xs px-2.5 py-1 border-l border-zinc-700/60 transition-colors ${threadMode ? 'bg-linear-to-b from-zinc-700 to-zinc-800 text-zinc-100' : 'text-zinc-600 hover:text-zinc-400'}`}
+            aria-pressed={threadMode}
+            className={`text-xs px-2.5 py-1 border-l border-zinc-700/60 transition-colors ${threadMode ? 'bg-gradient-to-b from-zinc-700 to-zinc-800 text-zinc-100' : 'text-zinc-600 hover:text-zinc-400'}`}
           >
             Threads
           </button>

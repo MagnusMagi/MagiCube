@@ -29,10 +29,12 @@ function readPref(key, fallback) {
   } catch { return fallback }
 }
 
-function Toggle({ value, onChange }) {
+function Toggle({ value, onChange, label }) {
   return (
     <button
       onClick={() => onChange(!value)}
+      aria-pressed={value}
+      aria-label={label}
       className={`shrink-0 relative w-10 h-[22px] p-0 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${value ? 'bg-violet-600' : 'bg-zinc-600'}`}
     >
       <span className={`absolute top-[2px] left-0 h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${value ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
@@ -47,7 +49,7 @@ function ToggleSetting({ label, description, value, onChange }) {
         <p className="text-sm text-zinc-200">{label}</p>
         <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
       </div>
-      <Toggle value={value} onChange={onChange} />
+      <Toggle value={value} onChange={onChange} label={label} />
     </div>
   )
 }
@@ -723,7 +725,8 @@ export function Settings({ onClose, mail: _mailProp }) {
           <nav className="shrink-0 lg:w-36 flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-visible border-b lg:border-b-0 lg:border-r border-zinc-800 px-2 py-1.5 lg:p-2">
             {TABS.map(t => (
               <button key={t} onClick={() => setTab(t)}
-                className={`shrink-0 lg:w-full text-left px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${tab === t ? 'bg-linear-to-r from-zinc-800 to-zinc-700/50 text-zinc-100' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
+                aria-pressed={tab === t}
+                className={`shrink-0 lg:w-full text-left px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${tab === t ? 'bg-gradient-to-r from-zinc-800 to-zinc-700/50 text-zinc-100' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
                 {t}
               </button>
             ))}
