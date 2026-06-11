@@ -333,7 +333,7 @@ export function MessageView({ uid, folder, folders, onDeleted, onRefreshList, on
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6">
         {showSource ? (
           <pre className="text-xs text-zinc-400 whitespace-pre-wrap font-mono leading-relaxed bg-zinc-900 rounded p-4 overflow-x-auto">
             {rawSource}
