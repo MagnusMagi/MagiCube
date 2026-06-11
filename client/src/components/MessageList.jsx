@@ -7,6 +7,7 @@ import AnimatedList from './bits/AnimatedList'
 import DecryptedText from './bits/DecryptedText'
 import { ContextMenu } from './bits/ContextMenu'
 import { useContextMenu } from '../hooks/useContextMenu'
+import { useSwipe } from '../hooks/useSwipe'
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -40,30 +41,60 @@ function groupIntoThreads(messages) {
   return Array.from(map.values()).sort((a, b) => new Date(b.latestDate) - new Date(a.latestDate))
 }
 
-function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented, onContextMenu }) {
+function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented, onContextMenu, onSwipeDelete, onSwipeToggleRead }) {
+  const { contentRef, onTouchStart, onTouchMove, onTouchEnd } = useSwipe({
+    onSwipeLeft:  onSwipeDelete,
+    onSwipeRight: onSwipeToggleRead,
+  })
+
   return (
-    <SpotlightCard
-      spotlightColor={active ? 'rgba(161,161,170,0.10)' : 'rgba(161,161,170,0.05)'}
-      className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-400' : !msg.read && !indented ? 'border-l-2 border-l-violet-500' : 'border-l-2 border-l-transparent'} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}
-      onContextMenu={e => onContextMenu?.(e, msg)}
-    >
-      <div className={`flex items-center shrink-0 ${indented ? 'pl-6 pr-1' : 'pl-3 pr-1'}`}>
-        <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
-          className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
-          style={{ opacity: selected ? 1 : undefined }} />
+    <div className="relative overflow-hidden">
+      {/* Delete hint — revealed on left swipe */}
+      <div className="absolute inset-0 flex items-center justify-end pr-5 bg-red-500/15 pointer-events-none">
+        <svg className="w-4 h-4 text-red-400" viewBox="0 0 16 16" fill="none">
+          <path d="M13 4H3M6 4V3h4v1M5 4v8a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </div>
-      <button onClick={() => onSelect(msg.uid)} className="flex-1 text-left px-3 py-3.5 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <span className={`text-sm truncate ${msg.read ? 'text-zinc-400' : 'text-zinc-100 font-medium'}`}>{msg.from.name || msg.from.address}</span>
-          <span className="text-xs text-zinc-500 shrink-0" title={msg.date ? new Date(msg.date).toLocaleString() : ''}>{formatDate(msg.date)}</span>
-        </div>
-        <div className={`text-xs truncate ${msg.read ? 'text-zinc-500' : 'text-zinc-300'}`}>{msg.subject}</div>
-      </button>
-    </SpotlightCard>
+      {/* Read/Unread hint — revealed on right swipe */}
+      <div className="absolute inset-0 flex items-center pl-5 bg-violet-500/15 pointer-events-none">
+        <svg className="w-4 h-4 text-violet-400" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="5" width="14" height="9" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+          <path d="M1 6l7 4.5 7-4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+          {msg.read && <circle cx="14" cy="3" r="2.5" fill="currentColor"/>}
+        </svg>
+      </div>
+      {/* Swipeable content */}
+      <div
+        ref={contentRef}
+        style={{ touchAction: 'pan-y' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <SpotlightCard
+          spotlightColor={active ? 'rgba(161,161,170,0.10)' : 'rgba(161,161,170,0.05)'}
+          className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-400' : !msg.read && !indented ? 'border-l-2 border-l-violet-500' : 'border-l-2 border-l-transparent'} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}
+          onContextMenu={e => onContextMenu?.(e, msg)}
+        >
+          <div className={`flex items-center shrink-0 ${indented ? 'pl-6 pr-1' : 'pl-3 pr-1'}`}>
+            <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
+              className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
+              style={{ opacity: selected ? 1 : undefined }} />
+          </div>
+          <button onClick={() => onSelect(msg.uid)} className="flex-1 text-left px-3 py-3.5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className={`text-sm truncate ${msg.read ? 'text-zinc-400' : 'text-zinc-100 font-medium'}`}>{msg.from.name || msg.from.address}</span>
+              <span className="text-xs text-zinc-500 shrink-0" title={msg.date ? new Date(msg.date).toLocaleString() : ''}>{formatDate(msg.date)}</span>
+            </div>
+            <div className={`text-xs truncate ${msg.read ? 'text-zinc-500' : 'text-zinc-300'}`}>{msg.subject}</div>
+          </button>
+        </SpotlightCard>
+      </div>
+    </div>
   )
 }
 
-function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, expanded, onToggleExpand, onContextMenu }) {
+function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, expanded, onToggleExpand, onContextMenu, onSwipeDelete, onSwipeToggleRead }) {
   const latestMsg = thread.messages.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b)
   const isAnyActive = thread.uids.some(uid => uid === activeUid)
 
@@ -113,6 +144,8 @@ function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, 
                 onSelect={onSelect}
                 onToggleSelect={uid => onToggleSelect(uid)}
                 onContextMenu={onContextMenu}
+                onSwipeDelete={onSwipeDelete}
+                onSwipeToggleRead={onSwipeToggleRead}
                 indented
               />
             ))}
@@ -198,6 +231,17 @@ export function MessageList({ folder, activeUid, onSelect, folders = [] }) {
     setBulkStatus('Deleting…')
     try { await mail.bulkDelete([...selectedUids], folder); setSelectedUids(new Set()); refresh(); setBulkStatus('') }
     catch (e) { setBulkStatus(e.message) }
+  }
+
+  function handleSwipeDelete(uid) {
+    mail.delete(uid, folder).then(refresh).catch(() => {})
+  }
+
+  function handleSwipeToggleRead(msg) {
+    mail.flags(msg.uid, folder,
+      msg.read ? [] : ['\\Seen'],
+      msg.read ? ['\\Seen'] : []
+    ).then(refresh).catch(() => {})
   }
 
   function handleRowContextMenu(e, msg) {
@@ -290,11 +334,13 @@ export function MessageList({ folder, activeUid, onSelect, folders = [] }) {
                 expanded={expandedThreads.has(thread.subject)}
                 onToggleExpand={toggleThreadExpand}
                 onContextMenu={handleRowContextMenu}
+                onSwipeDelete={uid => handleSwipeDelete(uid)}
+                onSwipeToggleRead={msg => handleSwipeToggleRead(msg)}
               />
             ))
           : <AnimatedList key={`${folder}-${page}`}>
               {messages.map(msg => (
-                <MessageRow key={msg.uid} msg={msg} active={activeUid === msg.uid} selected={selectedUids.has(msg.uid)} onSelect={onSelect} onToggleSelect={toggleOne} onContextMenu={handleRowContextMenu} />
+                <MessageRow key={msg.uid} msg={msg} active={activeUid === msg.uid} selected={selectedUids.has(msg.uid)} onSelect={onSelect} onToggleSelect={toggleOne} onContextMenu={handleRowContextMenu} onSwipeDelete={() => handleSwipeDelete(msg.uid)} onSwipeToggleRead={() => handleSwipeToggleRead(msg)} />
               ))}
             </AnimatedList>
         }
