@@ -2,10 +2,32 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { mail } from '../api/mail'
 
 const UNDO_SECONDS = 10
+const AUTO_SAVE_INTERVAL = 30000
+
+const EMOJIS = [
+  '😀','😂','😊','😍','🤔','😢','😎','🤝','👍','👎','❤️','🔥','✅','❌','⭐','🎉',
+  '📧','📎','🗓️','⏰','💼','📊','📈','🚀','💡','🔑','🔒','⚠️','ℹ️','✏️','🗑️','📋',
+  '🌟','💯','🎯','💬','📞','🏠','🌍','🤞','👋','🙏','💪','🤙','👏','🫡','🫂','🌈',
+]
+
+const COLORS = [
+  { label: 'Default', value: null, cls: 'bg-zinc-400' },
+  { label: 'Red',    value: '#FF453A', cls: 'bg-red-500' },
+  { label: 'Orange', value: '#FF9F0A', cls: 'bg-orange-500' },
+  { label: 'Green',  value: '#30D158', cls: 'bg-green-500' },
+  { label: 'Blue',   value: '#0071E3', cls: 'bg-blue-500' },
+  { label: 'Purple', value: '#BF5AF2', cls: 'bg-purple-500' },
+]
+
+const PRIORITIES = ['normal', 'high', 'low']
+const PRIORITY_META = {
+  normal: { label: 'Normal priority', symbol: '—',  cls: 'text-zinc-500 hover:text-zinc-300' },
+  high:   { label: 'High priority',   symbol: '!',  cls: 'text-red-400 hover:text-red-300' },
+  low:    { label: 'Low priority',    symbol: '↓',  cls: 'text-zinc-400 hover:text-zinc-300' },
+}
 
 function buildSignatureHtml(defaultBody) {
   if (defaultBody !== undefined) {
-    // If it looks like HTML already, use it as-is; otherwise convert plain text
     if (/<[a-z][\s\S]*>/i.test(defaultBody)) return defaultBody
     return defaultBody.replace(/\n/g, '<br>')
   }
@@ -17,18 +39,19 @@ function loadContacts() {
   try {
     const raw = localStorage.getItem('magicube:contacts')
     return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+  } catch { return [] }
 }
 
-// Extract the last token being typed (after last comma or space)
 function lastToken(value) {
   const parts = value.split(/[,\s]+/)
   return parts[parts.length - 1].trim()
 }
 
-function AddressInput({ label, value, onChange, placeholder, onFocus, onBlur }) {
+function countWords(text) {
+  return text.trim() ? text.trim().split(/\s+/).length : 0
+}
+
+function AddressInput({ value, onChange, placeholder }) {
   const [suggestions, setSuggestions] = useState([])
   const [open, setOpen] = useState(false)
   const contacts = useRef(loadContacts())
@@ -39,10 +62,7 @@ function AddressInput({ label, value, onChange, placeholder, onFocus, onBlur }) 
     const token = lastToken(e.target.value)
     if (token.length >= 1) {
       const filtered = contacts.current
-        .filter(c =>
-          c.name.toLowerCase().includes(token.toLowerCase()) ||
-          c.address.toLowerCase().includes(token.toLowerCase())
-        )
+        .filter(c => c.name.toLowerCase().includes(token.toLowerCase()) || c.address.toLowerCase().includes(token.toLowerCase()))
         .slice(0, 5)
       setSuggestions(filtered)
       setOpen(filtered.length > 0)
@@ -54,51 +74,33 @@ function AddressInput({ label, value, onChange, placeholder, onFocus, onBlur }) 
 
   function handleSelect(contact) {
     const token = lastToken(value)
-    // Replace the last token with the chosen address
     const prefix = value.slice(0, value.length - token.length)
-    const separator = prefix.length > 0 && !prefix.trimEnd().endsWith(',') ? '' : ''
     onChange(prefix + contact.address + ', ')
     setSuggestions([])
     setOpen(false)
   }
 
-  function handleKeyDown(e) {
-    if (e.key === 'Escape') { setOpen(false) }
-  }
-
-  // Close on outside click
   useEffect(() => {
-    function handleClick(e) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
-        setOpen(false)
-      }
+    function onClick(e) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setOpen(false)
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
   }, [])
 
   return (
     <div className="relative flex-1" ref={wrapperRef}>
       <input
-        type="text"
-        value={value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        placeholder={placeholder}
-        spellCheck="true"
+        type="text" value={value} onChange={handleChange}
+        onKeyDown={e => e.key === 'Escape' && setOpen(false)}
+        placeholder={placeholder} spellCheck="true"
         className="w-full bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none"
       />
       {open && (
         <div className="absolute left-0 top-full mt-1 z-50 w-72 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden">
           {suggestions.map((c, i) => (
-            <button
-              key={i}
-              type="button"
-              onMouseDown={e => { e.preventDefault(); handleSelect(c) }}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex flex-col"
-            >
+            <button key={i} type="button" onMouseDown={e => { e.preventDefault(); handleSelect(c) }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 transition-colors flex flex-col">
               <span className="text-zinc-200 font-medium">{c.name}</span>
               <span className="text-zinc-500 text-xs">{c.address}</span>
             </button>
@@ -111,23 +113,50 @@ function AddressInput({ label, value, onChange, placeholder, onFocus, onBlur }) 
 
 function ToolbarButton({ onMouseDown, title, children }) {
   return (
-    <button
-      type="button"
-      onMouseDown={onMouseDown}
-      title={title}
-      className="px-2 py-1 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded transition-colors font-medium select-none"
-    >
+    <button type="button" onMouseDown={onMouseDown} title={title}
+      className="px-2 py-1 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 rounded transition-colors font-medium select-none">
       {children}
     </button>
   )
 }
 
+function EmojiPicker({ onSelect }) {
+  return (
+    <div className="absolute bottom-full right-0 mb-1 z-50 bg-zinc-800 border border-zinc-700 rounded-xl shadow-2xl p-2 w-60">
+      <div className="grid grid-cols-8 gap-0.5">
+        {EMOJIS.map((emoji, i) => (
+          <button key={i} type="button"
+            onMouseDown={e => { e.preventDefault(); onSelect(emoji) }}
+            className="text-base p-1 rounded hover:bg-zinc-700 transition-colors text-center leading-none">
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ColorPicker({ onSelect }) {
+  return (
+    <div className="absolute bottom-full left-0 mb-1 z-50 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl p-1.5 flex gap-1.5">
+      {COLORS.map(c => (
+        <button key={c.label} type="button" title={c.label}
+          onMouseDown={e => { e.preventDefault(); onSelect(c.value) }}
+          className={`w-5 h-5 rounded-full ${c.cls} hover:scale-110 transition-transform border border-zinc-600`} />
+      ))}
+    </div>
+  )
+}
+
 function RichToolbar({ editorRef }) {
-  function exec(command, value) {
+  const [showEmoji, setShowEmoji] = useState(false)
+  const [showColor, setShowColor] = useState(false)
+
+  function exec(cmd, val) {
     return e => {
       e.preventDefault()
       editorRef.current?.focus()
-      document.execCommand(command, false, value ?? null)
+      document.execCommand(cmd, false, val ?? null)
     }
   }
 
@@ -138,16 +167,32 @@ function RichToolbar({ editorRef }) {
     if (url) document.execCommand('createLink', false, url)
   }
 
+  function handleColor(value) {
+    editorRef.current?.focus()
+    if (value) document.execCommand('foreColor', false, value)
+    else document.execCommand('removeFormat', false, null)
+    setShowColor(false)
+  }
+
+  function insertEmoji(emoji) {
+    editorRef.current?.focus()
+    document.execCommand('insertText', false, emoji)
+    setShowEmoji(false)
+  }
+
   return (
     <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-zinc-800/70 bg-zinc-800/20 flex-wrap">
-      <ToolbarButton onMouseDown={exec('bold')} title="Bold (Ctrl+B)">
-        <strong>B</strong>
-      </ToolbarButton>
-      <ToolbarButton onMouseDown={exec('italic')} title="Italic (Ctrl+I)">
-        <em>I</em>
-      </ToolbarButton>
-      <ToolbarButton onMouseDown={exec('underline')} title="Underline (Ctrl+U)">
-        <span className="underline">U</span>
+      <ToolbarButton onMouseDown={exec('bold')} title="Bold (Ctrl+B)"><strong>B</strong></ToolbarButton>
+      <ToolbarButton onMouseDown={exec('italic')} title="Italic (Ctrl+I)"><em>I</em></ToolbarButton>
+      <ToolbarButton onMouseDown={exec('underline')} title="Underline (Ctrl+U)"><span className="underline">U</span></ToolbarButton>
+      <ToolbarButton onMouseDown={exec('strikeThrough')} title="Strikethrough"><span className="line-through">S</span></ToolbarButton>
+      <div className="w-px h-4 bg-zinc-700 mx-1" />
+      <ToolbarButton onMouseDown={exec('formatBlock', 'h1')} title="Heading 1">H1</ToolbarButton>
+      <ToolbarButton onMouseDown={exec('formatBlock', 'h2')} title="Heading 2">H2</ToolbarButton>
+      <ToolbarButton onMouseDown={exec('formatBlock', 'pre')} title="Code block">
+        <svg className="w-3.5 h-3.5 inline" viewBox="0 0 16 16" fill="none">
+          <path d="M5 4L1 8l4 4M11 4l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </ToolbarButton>
       <div className="w-px h-4 bg-zinc-700 mx-1" />
       <ToolbarButton onMouseDown={handleLink} title="Insert link">
@@ -157,14 +202,18 @@ function RichToolbar({ editorRef }) {
         </svg>
       </ToolbarButton>
       <div className="w-px h-4 bg-zinc-700 mx-1" />
-      <ToolbarButton onMouseDown={exec('insertOrderedList')} title="Ordered list">
-        <svg className="w-3.5 h-3.5 inline" viewBox="0 0 16 16" fill="none">
-          <path d="M6 4h8M6 8h8M6 12h8M2 4h.01M2 8h.01M2 12h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-          <text x="1.5" y="4.5" fontSize="3.5" fill="currentColor">1.</text>
-        </svg>
-        1.
-      </ToolbarButton>
-      <ToolbarButton onMouseDown={exec('insertUnorderedList')} title="Unordered list">
+      <div className="relative">
+        <ToolbarButton onMouseDown={e => { e.preventDefault(); setShowColor(v => !v); setShowEmoji(false) }} title="Text color">
+          <svg className="w-4 h-4 inline" viewBox="0 0 16 16" fill="none">
+            <path d="M4.5 13L8 3.5l3.5 9.5M5.5 10h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            <rect x="3" y="14" width="10" height="1.2" fill="#FF453A" rx="0.6"/>
+          </svg>
+        </ToolbarButton>
+        {showColor && <ColorPicker onSelect={handleColor} />}
+      </div>
+      <div className="w-px h-4 bg-zinc-700 mx-1" />
+      <ToolbarButton onMouseDown={exec('insertOrderedList')} title="Numbered list">1.</ToolbarButton>
+      <ToolbarButton onMouseDown={exec('insertUnorderedList')} title="Bullet list">
         <svg className="w-3.5 h-3.5 inline" viewBox="0 0 16 16" fill="none">
           <circle cx="2.5" cy="4" r="1" fill="currentColor"/>
           <circle cx="2.5" cy="8" r="1" fill="currentColor"/>
@@ -172,6 +221,13 @@ function RichToolbar({ editorRef }) {
           <path d="M6 4h8M6 8h8M6 12h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
         </svg>
       </ToolbarButton>
+      <div className="w-px h-4 bg-zinc-700 mx-1" />
+      <div className="relative">
+        <ToolbarButton onMouseDown={e => { e.preventDefault(); setShowEmoji(v => !v); setShowColor(false) }} title="Insert emoji">
+          <span className="text-sm leading-none">😊</span>
+        </ToolbarButton>
+        {showEmoji && <EmojiPicker onSelect={insertEmoji} />}
+      </div>
     </div>
   )
 }
@@ -186,13 +242,16 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
   const [sending, setSending] = useState(false)
   const [showCc, setShowCc] = useState(false)
   const [showBcc, setShowBcc] = useState(false)
+  const [priority, setPriority] = useState('normal')
+  const [readReceipt, setReadReceipt] = useState(false)
+  const [wordCount, setWordCount] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [autoSaveStatus, setAutoSaveStatus] = useState('')
 
-  // Undo send state
-  const [undoState, setUndoState] = useState(null) // { countdown, payloadRef }
+  const [undoState, setUndoState] = useState(null)
   const undoIntervalRef = useRef(null)
   const undoCancelledRef = useRef(false)
 
-  // Scheduled send state
   const [showSchedule, setShowSchedule] = useState(false)
   const [scheduleDropdown, setScheduleDropdown] = useState(false)
   const [scheduledAt, setScheduledAt] = useState('')
@@ -202,16 +261,103 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
 
   const fileRef = useRef(null)
   const editorRef = useRef(null)
+  const isDirtyRef = useRef(false)
+  const composeValuesRef = useRef({ to, cc, bcc, subject })
+
+  useEffect(() => {
+    composeValuesRef.current = { to, cc, bcc, subject }
+    isDirtyRef.current = true
+  }, [to, cc, bcc, subject])
+
+  // Auto-save every 30s when dirty
+  useEffect(() => {
+    const id = setInterval(async () => {
+      if (!isDirtyRef.current) return
+      const { html, text } = getEditorContent()
+      const vals = composeValuesRef.current
+      if (!vals.to && !vals.subject && !text.trim()) return
+      try {
+        await mail.draft({ ...vals, cc: vals.cc || undefined, bcc: vals.bcc || undefined, html, text, folder: draftFolder })
+        isDirtyRef.current = false
+        setAutoSaveStatus('Auto-saved')
+        setTimeout(() => setAutoSaveStatus(''), 2000)
+      } catch (_) {}
+    }, AUTO_SAVE_INTERVAL)
+    return () => clearInterval(id)
+  }, [draftFolder])
+
+  // Cmd/Ctrl+Enter to send
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault()
+        handleSend()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  })
+
+  useEffect(() => {
+    return () => clearInterval(undoIntervalRef.current)
+  }, [])
+
+  function getEditorContent() {
+    return {
+      html: editorRef.current?.innerHTML ?? '',
+      text: editorRef.current?.innerText ?? '',
+    }
+  }
+
+  function handleEditorInput() {
+    isDirtyRef.current = true
+    const text = editorRef.current?.innerText ?? ''
+    setWordCount(countWords(text))
+  }
+
+  // Paste images inline as base64
+  function handleEditorPaste(e) {
+    const items = e.clipboardData?.items
+    if (!items) return
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault()
+        const file = item.getAsFile()
+        const reader = new FileReader()
+        reader.onload = ev => {
+          document.execCommand('insertHTML', false, `<img src="${ev.target.result}" style="max-width:100%" />`)
+        }
+        reader.readAsDataURL(file)
+        return
+      }
+    }
+  }
+
+  function handleDragOver(e) {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault()
+      setIsDragging(true)
+    }
+  }
+
+  function handleDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false)
+  }
+
+  function handleDrop(e) {
+    e.preventDefault()
+    setIsDragging(false)
+    const dropped = Array.from(e.dataTransfer.files)
+    if (dropped.length) setFiles(prev => [...prev, ...dropped])
+  }
 
   function handleResizeStart(e) {
     e.preventDefault()
-    const startX = e.clientX
-    const startY = e.clientY
-    const startW = size.width
-    const startH = size.height
+    const startX = e.clientX, startY = e.clientY
+    const startW = size.width, startH = size.height
     function onMove(ev) {
       setSize({
-        width: Math.max(480, Math.min(window.innerWidth - 64, startW + ev.clientX - startX)),
+        width:  Math.max(480, Math.min(window.innerWidth  - 64, startW + ev.clientX - startX)),
         height: Math.max(380, Math.min(window.innerHeight - 64, startH + ev.clientY - startY)),
       })
     }
@@ -223,26 +369,15 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
     window.addEventListener('mouseup', onUp)
   }
 
-  // Initialize editor content once
   const initialHtml = buildSignatureHtml(defaultBody)
-
-  function getEditorContent() {
-    const html = editorRef.current?.innerHTML ?? ''
-    const text = editorRef.current?.innerText ?? ''
-    return { html, text }
-  }
 
   function buildPayload() {
     const { html, text } = getEditorContent()
     return {
-      to,
-      cc: cc || undefined,
-      bcc: bcc || undefined,
-      subject,
-      html,
-      text,
-      inReplyTo,
-      references,
+      to, cc: cc || undefined, bcc: bcc || undefined,
+      subject, html, text, inReplyTo, references,
+      ...(priority !== 'normal' && { priority }),
+      ...(readReceipt && { readReceipt: true }),
     }
   }
 
@@ -262,13 +397,10 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
 
   function handleSend() {
     if (!to || !subject) { setStatus('To and Subject are required.'); return }
-
     const payload = buildPayload()
     undoCancelledRef.current = false
-
     let countdown = UNDO_SECONDS
     setUndoState({ countdown })
-
     undoIntervalRef.current = setInterval(() => {
       countdown -= 1
       if (undoCancelledRef.current) {
@@ -293,29 +425,15 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
     setStatus('')
   }
 
-  // Cleanup interval on unmount
-  useEffect(() => {
-    return () => clearInterval(undoIntervalRef.current)
-  }, [])
-
   async function handleSaveDraft() {
     setStatus('Saving…')
     const { html, text } = getEditorContent()
     try {
-      await mail.draft({
-        to,
-        cc: cc || undefined,
-        bcc: bcc || undefined,
-        subject,
-        html,
-        text,
-        folder: draftFolder,
-      })
+      await mail.draft({ to, cc: cc || undefined, bcc: bcc || undefined, subject, html, text, folder: draftFolder })
+      isDirtyRef.current = false
       setStatus('Draft saved')
       setTimeout(onClose, 800)
-    } catch (e) {
-      setStatus(e.message)
-    }
+    } catch (e) { setStatus(e.message) }
   }
 
   async function handleScheduleSend() {
@@ -326,25 +444,13 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
     const { html, text } = getEditorContent()
     try {
       await mail.scheduleSend({
-        to,
-        cc: cc || undefined,
-        bcc: bcc || undefined,
-        subject,
-        html,
-        text,
-        inReplyTo,
-        references,
-        scheduledAt: new Date(scheduledAt).toISOString(),
+        to, cc: cc || undefined, bcc: bcc || undefined, subject, html, text,
+        inReplyTo, references, scheduledAt: new Date(scheduledAt).toISOString(),
       })
       setStatus('Scheduled!')
       setTimeout(onClose, 800)
-    } catch (e) {
-      setStatus(e.message)
-    } finally {
-      setScheduling(false)
-      setShowSchedule(false)
-      setScheduleDropdown(false)
-    }
+    } catch (e) { setStatus(e.message) }
+    finally { setScheduling(false); setShowSchedule(false); setScheduleDropdown(false) }
   }
 
   function handleFileChange(e) {
@@ -352,23 +458,46 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
     e.target.value = ''
   }
 
-  function removeFile(i) {
-    setFiles(prev => prev.filter((_, idx) => idx !== i))
+  function cyclePriority() {
+    const idx = PRIORITIES.indexOf(priority)
+    setPriority(PRIORITIES[(idx + 1) % PRIORITIES.length])
   }
 
   const isSuccess = status === 'Sent!' || status === 'Draft saved' || status === 'Scheduled!'
+  const pMeta = PRIORITY_META[priority]
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4 bg-black/60 backdrop-blur-sm">
       <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         className="relative bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
         style={{ width: size.width, height: size.height, maxWidth: 'calc(100vw - 2rem)', maxHeight: 'calc(100dvh - 2rem)' }}
       >
+        {/* Drag-and-drop overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-zinc-900/80 border-2 border-dashed border-violet-500 rounded-2xl pointer-events-none">
+            <div className="text-center">
+              <svg className="w-10 h-10 text-violet-400 mx-auto mb-2" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v10M7 10l5-5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+              <p className="text-zinc-300 text-sm font-medium">Drop files to attach</p>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800">
-          <span className="text-sm font-medium text-zinc-200">
-            {inReplyTo ? 'Reply' : defaultSubject?.startsWith('Fwd:') ? 'Forward' : 'New message'}
-          </span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-sm font-medium text-zinc-200">
+              {inReplyTo ? 'Reply' : defaultSubject?.startsWith('Fwd:') ? 'Forward' : 'New message'}
+            </span>
+            {priority === 'high' && (
+              <span className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5 font-medium">High priority</span>
+            )}
+          </div>
           <button onClick={onClose} className="p-1.5 text-zinc-500 hover:text-zinc-300 transition-colors rounded">
             <svg className="w-4 h-4" viewBox="0 0 14 14" fill="none">
               <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
@@ -380,63 +509,38 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
         <div className="border-b border-zinc-800">
           <div className="flex items-center gap-3 px-5 py-2.5">
             <label className="text-xs text-zinc-500 w-12 shrink-0">To</label>
-            <AddressInput
-              value={to}
-              onChange={setTo}
-              placeholder="recipient@example.com"
-            />
+            <AddressInput value={to} onChange={setTo} placeholder="recipient@example.com" />
             <div className="flex gap-2 shrink-0">
-              <button
-                onClick={() => setShowCc(v => !v)}
-                className={`text-xs transition-colors ${showCc ? 'text-violet-400' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                Cc
-              </button>
-              <button
-                onClick={() => setShowBcc(v => !v)}
-                className={`text-xs transition-colors ${showBcc ? 'text-violet-400' : 'text-zinc-500 hover:text-zinc-300'}`}
-              >
-                Bcc
-              </button>
+              <button onClick={() => setShowCc(v => !v)}
+                className={`text-xs transition-colors ${showCc ? 'text-violet-400' : 'text-zinc-500 hover:text-zinc-300'}`}>Cc</button>
+              <button onClick={() => setShowBcc(v => !v)}
+                className={`text-xs transition-colors ${showBcc ? 'text-violet-400' : 'text-zinc-500 hover:text-zinc-300'}`}>Bcc</button>
             </div>
           </div>
 
           {showCc && (
             <div className="flex items-center gap-3 px-5 py-2.5 border-t border-zinc-800/60">
               <label className="text-xs text-zinc-500 w-12 shrink-0">Cc</label>
-              <AddressInput
-                value={cc}
-                onChange={setCc}
-                placeholder="cc@example.com"
-              />
+              <AddressInput value={cc} onChange={setCc} placeholder="cc@example.com" />
             </div>
           )}
 
           {showBcc && (
             <div className="flex items-center gap-3 px-5 py-2.5 border-t border-zinc-800/60">
               <label className="text-xs text-zinc-500 w-12 shrink-0">Bcc</label>
-              <AddressInput
-                value={bcc}
-                onChange={setBcc}
-                placeholder="bcc@example.com"
-              />
+              <AddressInput value={bcc} onChange={setBcc} placeholder="bcc@example.com" />
             </div>
           )}
 
           <div className="flex items-center gap-3 px-5 py-2.5 border-t border-zinc-800/60">
             <label className="text-xs text-zinc-500 w-12 shrink-0">Subject</label>
-            <input
-              type="text"
-              value={subject}
-              onChange={e => setSubject(e.target.value)}
-              placeholder="Subject"
-              spellCheck="true"
-              className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none"
-            />
+            <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+              placeholder="Subject" spellCheck="true"
+              className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none" />
           </div>
         </div>
 
-        {/* Rich text editor */}
+        {/* Editor */}
         <div className="flex flex-col flex-1 min-h-0">
           <RichToolbar editorRef={editorRef} />
           <div
@@ -445,10 +549,16 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
             spellCheck="true"
             suppressContentEditableWarning
             dangerouslySetInnerHTML={{ __html: initialHtml }}
+            onInput={handleEditorInput}
+            onPaste={handleEditorPaste}
             data-placeholder="Write your message…"
             className={[
               'flex-1 overflow-y-auto px-5 py-4 text-sm text-zinc-300 focus:outline-none min-h-[160px]',
               '[&:empty]:before:content-[attr(data-placeholder)] [&:empty]:before:text-zinc-600 [&:empty]:before:pointer-events-none',
+              '[&_h1]:text-xl [&_h1]:font-bold [&_h1]:text-zinc-100 [&_h1]:my-2',
+              '[&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-zinc-100 [&_h2]:my-1.5',
+              '[&_pre]:bg-zinc-800 [&_pre]:rounded [&_pre]:px-3 [&_pre]:py-2 [&_pre]:text-xs [&_pre]:font-mono [&_pre]:my-2',
+              '[&_a]:text-violet-400 [&_a]:underline',
             ].join(' ')}
             style={{ wordBreak: 'break-word' }}
           />
@@ -459,8 +569,14 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           <div className="px-5 pb-2 flex flex-wrap gap-1.5">
             {files.map((f, i) => (
               <span key={i} className="flex items-center gap-1.5 bg-zinc-800 text-xs text-zinc-300 rounded px-2.5 py-1">
-                <span className="truncate max-w-[140px]">{f.name}</span>
-                <button onClick={() => removeFile(i)} className="text-zinc-500 hover:text-zinc-200 ml-1">✕</button>
+                <svg className="w-3 h-3 text-zinc-500 shrink-0" viewBox="0 0 12 12" fill="none">
+                  <path d="M7 1H3a1 1 0 00-1 1v8a1 1 0 001 1h6a1 1 0 001-1V4L7 1z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"/>
+                  <path d="M7 1v3h3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="truncate max-w-[120px]">{f.name}</span>
+                <span className="text-zinc-600 tabular-nums">{(f.size / 1024).toFixed(0)}k</span>
+                <button onClick={() => setFiles(prev => prev.filter((_, idx) => idx !== i))}
+                  className="text-zinc-500 hover:text-zinc-200 ml-0.5">✕</button>
               </span>
             ))}
           </div>
@@ -472,10 +588,8 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
             <span className="text-zinc-300">
               Sending in <span className="text-violet-400 font-medium tabular-nums">{undoState.countdown}s</span>…
             </span>
-            <button
-              onClick={handleCancelUndo}
-              className="text-sm text-zinc-200 bg-zinc-700 hover:bg-zinc-600 px-3 py-1 rounded-md transition-colors font-medium"
-            >
+            <button onClick={handleCancelUndo}
+              className="text-sm text-zinc-200 bg-zinc-700 hover:bg-zinc-600 px-3 py-1 rounded-md transition-colors font-medium">
               Cancel
             </button>
           </div>
@@ -484,58 +598,38 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
         {/* Scheduled send picker */}
         {showSchedule && (
           <div className="mx-4 mb-2 flex flex-col sm:flex-row sm:items-center gap-2 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3">
-            <input
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={e => setScheduledAt(e.target.value)}
-              className="flex-1 bg-zinc-900 border border-zinc-700 text-sm text-zinc-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-500"
-            />
+            <input type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
+              className="flex-1 bg-zinc-900 border border-zinc-700 text-sm text-zinc-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-500" />
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={handleScheduleSend}
-                disabled={scheduling}
-                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors"
-              >
+              <button onClick={handleScheduleSend} disabled={scheduling}
+                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
                 {scheduling ? 'Scheduling…' : 'Schedule'}
               </button>
-              <button
-                onClick={() => { setShowSchedule(false); setScheduleDropdown(false) }}
-                className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
-              >
-                Cancel
-              </button>
+              <button onClick={() => { setShowSchedule(false); setScheduleDropdown(false) }}
+                className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">Cancel</button>
             </div>
           </div>
         )}
 
-        {/* Footer actions */}
-        <div className="flex items-center gap-3 px-5 py-3.5 border-t border-zinc-800">
-          {/* Send + schedule dropdown group */}
-          <div className="flex items-stretch relative">
-            <button
-              onClick={handleSend}
-              disabled={sending || !!undoState}
+        {/* Footer */}
+        <div className="flex items-center gap-2 px-5 py-3.5 border-t border-zinc-800">
+          <div className="flex items-stretch relative shrink-0">
+            <button onClick={handleSend} disabled={sending || !!undoState}
               className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2 rounded-l-lg transition-colors"
-            >
+              title="Send (Ctrl+Enter)">
               {sending ? 'Sending…' : 'Send'}
             </button>
-            <button
-              onClick={() => setScheduleDropdown(v => !v)}
-              disabled={sending || !!undoState}
+            <button onClick={() => setScheduleDropdown(v => !v)} disabled={sending || !!undoState}
               className="bg-violet-700 hover:bg-violet-600 disabled:opacity-50 text-white text-sm px-2 py-2 rounded-r-lg border-l border-violet-500 transition-colors"
-              title="Schedule send"
-            >
+              title="Schedule send">
               <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none">
                 <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
             {scheduleDropdown && !showSchedule && (
               <div className="absolute left-0 bottom-full mb-1 z-50 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden min-w-[160px]">
-                <button
-                  type="button"
-                  onClick={() => { setShowSchedule(true); setScheduleDropdown(false) }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-zinc-200 hover:bg-zinc-700 transition-colors flex items-center gap-2"
-                >
+                <button type="button" onClick={() => { setShowSchedule(true); setScheduleDropdown(false) }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-zinc-200 hover:bg-zinc-700 transition-colors flex items-center gap-2">
                   <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 16 16" fill="none">
                     <rect x="2" y="3" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.3"/>
                     <path d="M5 2v2M11 2v2M2 7h12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
@@ -547,20 +641,42 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
             )}
           </div>
 
-          <button
-            onClick={handleSaveDraft}
-            disabled={sending || !!undoState}
-            className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50"
-          >
+          <button onClick={handleSaveDraft} disabled={sending || !!undoState}
+            className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors disabled:opacity-50 shrink-0">
             Save draft
           </button>
 
+          <div className="w-px h-4 bg-zinc-800 mx-0.5 shrink-0" />
+
+          {/* Priority cycle button */}
+          <button onClick={cyclePriority} title={pMeta.label}
+            className={`px-2 py-1.5 rounded text-sm font-bold transition-colors shrink-0 ${pMeta.cls}`}>
+            {pMeta.symbol}
+          </button>
+
+          {/* Read receipt toggle */}
+          <button onClick={() => setReadReceipt(v => !v)}
+            title={readReceipt ? 'Read receipt requested' : 'Request read receipt'}
+            className={`p-1.5 rounded transition-colors shrink-0 ${readReceipt ? 'text-violet-400' : 'text-zinc-600 hover:text-zinc-400'}`}>
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+              <path d="M1 9l4 4L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7 9l4 4 4-9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity={readReceipt ? 1 : 0.25}/>
+            </svg>
+          </button>
+
+          <div className="flex-1" />
+
+          {/* Auto-save / word count */}
+          {autoSaveStatus ? (
+            <span className="text-xs text-zinc-500 shrink-0">{autoSaveStatus}</span>
+          ) : wordCount > 0 ? (
+            <span className="text-xs text-zinc-600 tabular-nums shrink-0">{wordCount}w</span>
+          ) : null}
+
           {/* Attach file */}
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="p-1.5 text-zinc-500 hover:text-zinc-300 transition-colors rounded ml-auto"
-            title="Attach file"
-          >
+          <button onClick={() => fileRef.current?.click()}
+            className="p-1.5 text-zinc-500 hover:text-zinc-300 transition-colors rounded shrink-0"
+            title="Attach file (or drag & drop)">
             <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
               <path d="M13.5 8l-5.5 5.5a4 4 0 01-5.657-5.657l6-6a2.5 2.5 0 013.535 3.535L6 11.243a1 1 0 01-1.414-1.414L10 4.414" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
             </svg>
@@ -568,16 +684,15 @@ export function Compose({ onClose, defaultTo = '', defaultSubject = '', defaultB
           <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFileChange} />
 
           {status && !undoState && (
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-md ${isSuccess ? 'text-emerald-300 bg-emerald-500/10' : 'text-red-300 bg-red-500/10 border border-red-500/20'}`}>
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-md shrink-0 ${isSuccess ? 'text-emerald-300 bg-emerald-500/10' : 'text-red-300 bg-red-500/10 border border-red-500/20'}`}>
               {status}
             </span>
           )}
         </div>
 
-        <div
-          onMouseDown={handleResizeStart}
-          className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-1 text-zinc-700 hover:text-zinc-500 transition-colors"
-        >
+        {/* Resize handle */}
+        <div onMouseDown={handleResizeStart}
+          className="absolute bottom-0 right-0 w-5 h-5 cursor-se-resize flex items-end justify-end p-1 text-zinc-700 hover:text-zinc-500 transition-colors">
           <svg viewBox="0 0 8 8" className="w-2.5 h-2.5" fill="none">
             <path d="M7 1L1 7M7 4L4 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
           </svg>
