@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { gsap } from 'gsap'
 import { useAuth } from './hooks/useAuth'
 import { Login } from './components/Login'
 import { Sidebar } from './components/Sidebar'
@@ -8,6 +9,8 @@ import { MessageView } from './components/MessageView'
 import { Compose } from './components/Compose'
 import { Settings } from './components/Settings'
 import { useFolders } from './hooks/useMail'
+
+const PANELS = ['sidebar', 'list', 'message']
 
 export default function App() {
   const { user, loading, login, logout } = useAuth()
@@ -19,6 +22,42 @@ export default function App() {
   const [listKey, setListKey] = useState(0)
   const [mobilePanel, setMobilePanel] = useState('sidebar')
   const [theme, setTheme] = useState(() => localStorage.getItem('magicube:theme') || 'dark')
+
+  const sidebarRef = useRef(null)
+  const listRef = useRef(null)
+  const messageRef = useRef(null)
+  const panelRefs = [sidebarRef, listRef, messageRef]
+
+  // Set initial panel positions before first paint (fires when panels mount after login)
+  useLayoutEffect(() => {
+    if (!sidebarRef.current || window.innerWidth >= 768) return
+    const idx = PANELS.indexOf(mobilePanel)
+    panelRefs.forEach((ref, i) => gsap.set(ref.current, { x: `${(i - idx) * 100}%` }))
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Animate panels when active panel changes
+  useEffect(() => {
+    if (!sidebarRef.current || window.innerWidth >= 768) return
+    const idx = PANELS.indexOf(mobilePanel)
+    panelRefs.forEach((ref, i) => {
+      gsap.to(ref.current, { x: `${(i - idx) * 100}%`, duration: 0.34, ease: 'power2.inOut' })
+    })
+  }, [mobilePanel]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // On resize: clear transforms on desktop, restore positions on mobile
+  useEffect(() => {
+    function onResize() {
+      if (!sidebarRef.current) return
+      if (window.innerWidth >= 768) {
+        panelRefs.forEach(ref => gsap.set(ref.current, { clearProps: 'transform' }))
+      } else {
+        const idx = PANELS.indexOf(mobilePanel)
+        panelRefs.forEach((ref, i) => gsap.set(ref.current, { x: `${(i - idx) * 100}%` }))
+      }
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [mobilePanel]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light')
@@ -64,58 +103,63 @@ export default function App() {
 
   return (
     <div className="h-dvh bg-zinc-950 flex overflow-hidden">
-      {/* Sidebar panel */}
-      <div className={`h-full ${mobilePanel === 'sidebar' ? 'flex flex-col flex-1' : 'hidden'} md:flex md:flex-col md:flex-none`}>
-        <Sidebar
-          activeFolder={folder}
-          onFolderSelect={handleFolderSelect}
-          user={user}
-          onLogout={logout}
-          onCompose={() => setCompose({})}
-          onSettings={() => setShowSettings(true)}
-          theme={theme}
-          onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-        />
-      </div>
+      {/* Wrapper: stacking context on mobile, transparent on desktop */}
+      <div className="relative flex-1 overflow-hidden md:contents">
 
-      {/* Message list panel */}
-      <div className={`h-full flex flex-col ${mobilePanel === 'list' ? 'flex-1' : 'hidden'} md:flex md:flex-none`}>
-        <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
-          <button onClick={() => setMobilePanel('sidebar')}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
-            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
-              <path d="M12 15L7 10l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <span className="text-sm font-semibold text-zinc-200 truncate">{folderLabel}</span>
-        </div>
-        <FadeContent key={folder} className="flex-1 min-h-0 flex flex-col" duration={180}>
-          <MessageList key={listKey} folder={folder} activeUid={activeUid} onSelect={handleMessageSelect} />
-        </FadeContent>
-      </div>
-
-      {/* Message view panel */}
-      <div className={`h-full flex flex-col ${mobilePanel === 'message' ? 'flex-1' : 'hidden'} md:flex md:flex-1`}>
-        <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
-          <button onClick={() => setMobilePanel('list')}
-            className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
-            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
-              <path d="M12 15L7 10l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <span className="text-sm font-semibold text-zinc-200 truncate">{folderLabel}</span>
-        </div>
-        <FadeContent key={activeUid || 'empty'} className="flex-1 min-h-0 flex flex-col" duration={180}>
-          <MessageView
-            uid={activeUid}
-            folder={folder}
-            folders={folders}
-            onDeleted={handleMessageDeleted}
-            onRefreshList={handleRefreshList}
-            onCompose={setCompose}
+        {/* Sidebar panel */}
+        <div ref={sidebarRef} className="absolute inset-0 flex flex-col md:relative md:inset-auto md:flex-none">
+          <Sidebar
+            activeFolder={folder}
+            onFolderSelect={handleFolderSelect}
+            user={user}
+            onLogout={logout}
+            onCompose={() => setCompose({})}
+            onSettings={() => setShowSettings(true)}
             theme={theme}
+            onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
           />
-        </FadeContent>
+        </div>
+
+        {/* Message list panel */}
+        <div ref={listRef} className="absolute inset-0 flex flex-col md:relative md:inset-auto md:flex-none">
+          <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
+            <button onClick={() => setMobilePanel('sidebar')}
+              className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
+              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
+                <path d="M12 15L7 10l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <span className="text-sm font-semibold text-zinc-200 truncate">{folderLabel}</span>
+          </div>
+          <FadeContent key={folder} className="flex-1 min-h-0 flex flex-col" duration={180}>
+            <MessageList key={listKey} folder={folder} activeUid={activeUid} onSelect={handleMessageSelect} />
+          </FadeContent>
+        </div>
+
+        {/* Message view panel */}
+        <div ref={messageRef} className="absolute inset-0 flex flex-col md:relative md:inset-auto md:flex-1">
+          <div className="md:hidden shrink-0 flex items-center h-12 gap-3 px-3 border-b border-zinc-800/60 bg-zinc-950">
+            <button onClick={() => setMobilePanel('list')}
+              className="p-1.5 text-zinc-400 hover:text-zinc-200 transition-colors rounded">
+              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
+                <path d="M12 15L7 10l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <span className="text-sm font-semibold text-zinc-200 truncate">{folderLabel}</span>
+          </div>
+          <FadeContent key={activeUid || 'empty'} className="flex-1 min-h-0 flex flex-col" duration={180}>
+            <MessageView
+              uid={activeUid}
+              folder={folder}
+              folders={folders}
+              onDeleted={handleMessageDeleted}
+              onRefreshList={handleRefreshList}
+              onCompose={setCompose}
+              theme={theme}
+            />
+          </FadeContent>
+        </div>
+
       </div>
 
       {compose !== null && (
