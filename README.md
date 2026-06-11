@@ -34,12 +34,17 @@ Browser  ←──HTTPS──→  Express (server.js)  ←──IMAP/SMTP──�
 
 ## Screenshots
 
-> _Add screenshots or a GIF of the app here. Suggested shots:_
-> - _Inbox with unread badges and folder tree_
-> - _Compose window with rich text toolbar open_
-> - _Global search modal (⌘K)_
-> - _Settings → Labels tab_
-> - _Light mode vs dark mode side by side_
+| Login | Inbox (dark) | Inbox (light) |
+|-------|-------------|---------------|
+| ![Login](screenshots/01-login.png) | ![Inbox dark](screenshots/02-inbox.png) | ![Inbox light](screenshots/03-inbox-light.png) |
+
+| Message view | Compose | Global search |
+|-------------|---------|---------------|
+| ![Message](screenshots/04-message-view.png) | ![Compose](screenshots/05-compose.png) | ![Search](screenshots/06-global-search.png) |
+
+| Settings → Labels | Settings → Templates |
+|------------------|---------------------|
+| ![Labels](screenshots/07-settings-labels.png) | ![Templates](screenshots/08-settings-templates.png) |
 
 ---
 
