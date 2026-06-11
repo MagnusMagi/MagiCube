@@ -147,11 +147,11 @@ function AccountsTab({ mail }) {
             return (
               <div
                 key={i}
-                className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border ${isActive ? 'border-violet-600/50 bg-violet-600/10' : 'border-zinc-800 bg-zinc-800/40'}`}
+                className={`flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border ${isActive ? 'border-zinc-700/50 bg-zinc-800' : 'border-zinc-800 bg-zinc-800/40'}`}
               >
-                <span className={`text-sm truncate ${isActive ? 'text-violet-300 font-medium' : 'text-zinc-300'}`}>
+                <span className={`text-sm truncate ${isActive ? 'text-zinc-100 font-medium' : 'text-zinc-300'}`}>
                   {acc.email ?? acc}
-                  {isActive && <span className="ml-2 text-xs text-violet-400/70">(active)</span>}
+                  {isActive && <span className="ml-2 text-xs text-zinc-500">(active)</span>}
                 </span>
                 {!isActive && (
                   <div className="flex gap-2 shrink-0">
@@ -580,7 +580,7 @@ export function Settings({ onClose, mail }) {
           <nav className="shrink-0 lg:w-36 flex lg:flex-col gap-0.5 overflow-x-auto lg:overflow-visible border-b lg:border-b-0 lg:border-r border-zinc-800 px-2 py-1.5 lg:p-2">
             {TABS.map(t => (
               <button key={t} onClick={() => setTab(t)}
-                className={`shrink-0 lg:w-full text-left px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${tab === t ? 'bg-violet-600/20 text-violet-300' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
+                className={`shrink-0 lg:w-full text-left px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${tab === t ? 'bg-linear-to-r from-zinc-800 to-zinc-700/50 text-zinc-100' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'}`}>
                 {t}
               </button>
             ))}

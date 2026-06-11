@@ -40,7 +40,7 @@ function groupIntoThreads(messages) {
 
 function MessageRow({ msg, active, selected, onSelect, onToggleSelect, indented }) {
   return (
-    <SpotlightCard spotlightColor={active ? 'rgba(139,92,246,0.12)' : 'rgba(139,92,246,0.07)'} className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-violet-600/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-violet-500' : ''} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
+    <SpotlightCard spotlightColor={active ? 'rgba(161,161,170,0.10)' : 'rgba(161,161,170,0.05)'} className={`group relative flex items-stretch border-b border-zinc-800/40 transition-colors ${active ? 'bg-zinc-700/15' : selected ? 'bg-zinc-800/60' : ''} ${active ? 'border-l-2 border-l-zinc-600' : ''} ${indented ? 'border-l-2 border-l-zinc-700/60' : ''}`}>
       <div className={`flex items-center shrink-0 ${indented ? 'pl-6 pr-1' : 'pl-3 pr-1'}`}>
         <input type="checkbox" checked={selected} onChange={() => onToggleSelect(msg.uid)} onClick={e => e.stopPropagation()}
           className="w-3.5 h-3.5 rounded border-zinc-600 bg-zinc-800 accent-violet-500 cursor-pointer"
@@ -62,8 +62,8 @@ function ThreadRow({ thread, activeUid, selectedUids, onSelect, onToggleSelect, 
   const isAnyActive = thread.uids.some(uid => uid === activeUid)
 
   return (
-    <div className={`border-b border-zinc-800/40 ${isAnyActive ? 'bg-violet-600/10' : ''}`}>
-      <div className={`group relative flex items-stretch transition-colors ${isAnyActive ? 'border-l-2 border-l-violet-500' : ''} ${!expanded ? 'hover:bg-zinc-800/40' : 'bg-zinc-800/20'}`}>
+    <div className={`border-b border-zinc-800/40 ${isAnyActive ? 'bg-zinc-700/10' : ''}`}>
+      <div className={`group relative flex items-stretch transition-colors ${isAnyActive ? 'border-l-2 border-l-zinc-600' : ''} ${!expanded ? 'hover:bg-zinc-800/40' : 'bg-zinc-800/20'}`}>
         <div className="flex items-center pl-3 pr-1 shrink-0">
           <input
             type="checkbox"
